@@ -34,7 +34,7 @@ void scanner_read(void *ptr, size_t bytes, FILE *fp) {
     size_t objects_read = fread(ptr, bytes, 1, fp);
     //fprintf(stderr, "read: %d, to-read: %d\n", bytes_read, bytes);
     if(objects_read != 1) {
-        fprintf(stderr, "'Couldn't read %d bytes from file' near line %d.\n", bytes, __LINE__);
+        fprintf(stderr, "'Couldn't read %ld bytes from file' near line %d.\n", bytes, __LINE__);
         exit(1);
     }
 }

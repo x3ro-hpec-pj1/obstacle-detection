@@ -36,6 +36,7 @@ int load_input_file(const char *file_path) {
  */
 int read_scanner_segment(char *target_buffer) {
     scanner_data_offset = scanner_data_offset % scanner_data_length;
+    int initial_offset = scanner_data_offset;
 
     char *source = scanner_data + scanner_data_offset;
     if(source[0] != 'M' || source[1] != 'D') {
@@ -69,7 +70,7 @@ int read_scanner_segment(char *target_buffer) {
     if(source[i] == '\n') {
         i++;
         scanner_data_offset += i;
-        return 0;
+        return scanner_data_offset - initial_offset;
     }
 
     int data_start = i;
@@ -84,5 +85,5 @@ int read_scanner_segment(char *target_buffer) {
     strncpy(target_buffer, source + data_start, data_length);
     scanner_data_offset += i + 3; // 3 = Sum + LF + LF
 
-    return data_length;
+    return scanner_data_offset - initial_offset;
 }

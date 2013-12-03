@@ -76,6 +76,62 @@ void run() {
     }
 }
 
+/**
+ * Will modify the segment buffer!
+ *
+ */
+
+/**
+ * Parses the given scanner segment, extracting the distance values and writing
+ * them into the given distance array.
+ *
+ * Note: This will modify the passed segment buffer!
+ *
+ * @param  segment
+ * @param  distances
+ * @return The SICP2.0 timestamp of the parsed scanner segment.
+ */
+int evaluate_scanner_segment(char *segment, int *distances) {
+    int timestamp;
+
+    timestamp = segment[0] - 0x30;
+    timestamp <<= 6;
+    timestamp &= 0xFFFFC0; // clear six-most MSB bits according SCIP 2.0
+    timestamp |= segment[1] - 0x30;
+    timestamp <<= 6;
+    timestamp &= 0xFFFFC0;
+    timestamp |= segment[2] - 0x30;
+    timestamp <<= 6;
+    timestamp &= 0xFFFFC0;
+    timestamp |= segment[3] - 0x30;
+
+    int idx = 0;
+    // Start processing data after initial 6 bytes of header, including LF
+    // Data is comprised of 64 byte chunks, a 1-byte sum and a line feed
+    for(int i = 6; i < 1550; i += 66) {
+        for(int j = 0; j < 64; j++) {
+            segment[idx] = segment[i+j];
+            idx++;
+        }
+    }
+
+    // Now we have a continous stream of scanner data, without header, sums and
+    // linefeeds. We now decode the extracted distance values.
+    // 1536 bytes is the raw data packet size.
+    for(idx = 0; idx < 1536; idx += 3){
+        distances[idx/3] = 0;
+        distances[idx/3] = segment[idx] - 0x30;
+        distances[idx/3] <<= 6;
+        distances[idx/3] &= 0xFFFFC0; // clear six-most MSB bits
+        distances[idx/3] |= segment[idx+1] - 0x30;
+        distances[idx/3] <<= 6;
+        distances[idx/3] &= 0xFFFFC0;
+        distances[idx/3] |= segment[idx+2] - 0x30;
+    }
+
+     return timestamp;
+}
+
 
 
 int main(int argc, const char *argv[]) {
@@ -96,16 +152,18 @@ int main(int argc, const char *argv[]) {
     printf("done11\n");
 
     char databuffer[SCANNER_SEGMENT_SIZE];
-    // read_scanner_segment(databuffer);
-    // printf("test: %s\n", databuffer);
-    // read_scanner_segment(databuffer);
-    // printf("test1: %s\n", databuffer);
-    // read_scanner_segment(databuffer);
-    // printf("test2: %s\n", databuffer);
+    int bytes_read;
 
     while(1) {
-        read_scanner_segment(databuffer);
-        printf("%s\n", databuffer);
+        bytes_read = read_scanner_segment(databuffer);
+        if(bytes_read != 1616) {
+            fprintf(stderr, "Read non-data scanner segment. Skipping\n");
+            continue;
+        }
+
+        int timestamp = evaluate_scanner_segment(databuffer, distance);
+        printf("timestamp: %d\n", timestamp);
+        break;
     }
     return 0;
 }

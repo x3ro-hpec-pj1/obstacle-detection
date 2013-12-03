@@ -78,11 +78,6 @@ void run() {
 }
 
 /**
- * Will modify the segment buffer!
- *
- */
-
-/**
  * Parses the given scanner segment, extracting the distance values and writing
  * them into the given distance array.
  *

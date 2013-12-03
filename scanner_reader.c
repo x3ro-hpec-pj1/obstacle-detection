@@ -33,8 +33,12 @@ int load_input_file(const char *file_path) {
 void scanner_read(void *ptr, size_t bytes, FILE *fp) {
     size_t objects_read = fread(ptr, bytes, 1, fp);
     if(objects_read != 1) {
-        fprintf(stderr, "'Couldn't read %ld bytes from file' near line %d.\n", bytes, __LINE__);
-        exit(1);
+        if(fseek(fp, 0L, SEEK_SET) == 0) {
+            return scanner_read(ptr, bytes, fp);
+        } else {
+            fprintf(stderr, "'Couldn't read %ld bytes from file' near line %d.\n", bytes, __LINE__);
+            exit(1);
+        }
     }
 }
 

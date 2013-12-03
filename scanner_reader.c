@@ -1,4 +1,12 @@
-#include <scanner_reader.h>
+#include <stdio.h> /* for fprintf and stderr */
+#include <stdlib.h> /* for exit */
+#include <string.h>
+
+#include "scanner_reader.h"
+
+int scanner_data_offset = 0;
+int scanner_data_length = -1;
+char *scanner_data;
 
 int load_input_file(const char *file_path) {
     FILE *fp = fopen(file_path, "rb");
@@ -21,8 +29,12 @@ int load_input_file(const char *file_path) {
     return 0;
 }
 
-
-int read_scanner_segment(const char *target_buffer) {
+/**
+ * Reads an SICP2.0 segment and writes it to the given buffer, who's size should
+ * at least be equal to SCANNER_SEGMENT_SIZE.
+ * @return bytes read
+ */
+int read_scanner_segment(char *target_buffer) {
     scanner_data_offset = scanner_data_offset % scanner_data_length;
 
     char *source = scanner_data + scanner_data_offset;
@@ -69,6 +81,8 @@ int read_scanner_segment(const char *target_buffer) {
     i++; // Include the last char
 
     int data_length = i - data_start;
-    memcpy(target_buffer, source + data_start, data_length);
+    strncpy(target_buffer, source + data_start, data_length);
     scanner_data_offset += i + 3; // 3 = Sum + LF + LF
+
+    return data_length;
 }

@@ -1,6 +1,7 @@
 #include <pthread.h>
-#include <stdio.h> /* for fprintf and stderr */
-#include <stdlib.h> /* for exit */
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
 
 #include "scanner_reader.h"
 
@@ -22,9 +23,9 @@ pthread_mutex_t mutexUSB; // mutex for USB-access used to receive measurement da
 
 char *startScanMScommand = NULL;
 
-int NearestSteps[128]; // index = Obstacle-ID, integer-value = Nearest-Step of Obstacle
-int FirstSteps[128]; // index = Obstacle-ID, integer-value = First-Step of Obstacle
-int LastSteps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstacle
+int nearest_steps[128]; // index = Obstacle-ID, integer-value = Nearest-Step of Obstacle
+int first_steps[128]; // index = Obstacle-ID, integer-value = First-Step of Obstacle
+int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstacle
 
 #define DISTANCE_VALUE_COUNT 512
 int distance[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
@@ -118,7 +119,7 @@ int evaluate_scanner_segment(char *segment, int *distances) {
     // Now we have a continous stream of scanner data, without header, sums and
     // linefeeds. We now decode the extracted distance values.
     // 1536 bytes is the raw data packet size.
-    for(idx = 0; idx < 1536; idx += 3){
+    for(idx = 0; idx < 1536; idx += 3) {
         distances[idx/3] = 0;
         distances[idx/3] = segment[idx] - 0x30;
         distances[idx/3] <<= 6;
@@ -130,6 +131,50 @@ int evaluate_scanner_segment(char *segment, int *distances) {
     }
 
      return timestamp;
+}
+
+/**
+ * Perform obstacle detection on the scanner's distance values.
+ * @return Number of obstacles that were detected.
+ */
+int detect_obstacle_segments(int *distances) {
+    int i;
+
+    // Initialize loop variables
+    int obid = 0;
+    first_steps[0] = 0;
+    nearest_steps[0] = 0;
+    last_steps[0] = 1;
+
+    // Skip first and last value, otherwise "i-1" would run out of bounds
+    for(i = 1; i < (DISTANCE_VALUE_COUNT-1); i++) {
+        // According to the laserscanner data-sheet, no accuraccy is guaranteed
+        // below 20mm and above 5600mm, so we skip the value.
+        if(distance[i] < 20 || distance[i] > 5600) {
+            distance[i] = INT_MAX;
+            continue;
+        }
+
+        // current step is part of same segment
+        if(abs(distance[i] - distance[i-1]) <= (THRESHOLD_FACTOR * distance[i] + 20)) {
+            // update nearest-step of this segment
+            if(distance[i] < distance[nearest_steps[obid]]) {
+                nearest_steps[obid] = i;
+            }
+            last_steps[obid] = i; // update last step of segment
+
+
+        // new segment only if at least 4 steps away from previous
+        } else if(i - first_steps[obid] >= 4) {
+            obid++; // use the next obstacle-ID in the next loop
+            first_steps[obid] = i;
+            nearest_steps[obid] = i;
+            last_steps[obid] = i+1;
+        }
+    }
+
+    // Number of obstacles found. +1 since obid counts from 0.
+    return obid + 1;
 }
 
 
@@ -163,6 +208,8 @@ int main(int argc, const char *argv[]) {
 
         int timestamp = evaluate_scanner_segment(databuffer, distance);
         printf("timestamp: %d\n", timestamp);
+        int obid = detect_obstacle_segments(distance);
+        printf("obid: %d\n", obid);
         break;
     }
     return 0;

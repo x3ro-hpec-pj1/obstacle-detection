@@ -32,17 +32,11 @@ int load_input_file(const char *file_path) {
 
 void scanner_read(void *ptr, size_t bytes, FILE *fp) {
     size_t objects_read = fread(ptr, bytes, 1, fp);
-    //fprintf(stderr, "read: %d, to-read: %d\n", bytes_read, bytes);
     if(objects_read != 1) {
         fprintf(stderr, "'Couldn't read %ld bytes from file' near line %d.\n", bytes, __LINE__);
         exit(1);
     }
 }
-
-
-char *carry_buffer;
-int carried_bytes = 0;
-bool carry_buffer_allocated = false;
 
 /**
  * Reads an SICP2.0 segment and writes it to the given buffer, who's size should
@@ -50,12 +44,6 @@ bool carry_buffer_allocated = false;
  * @return bytes read
  */
 int read_scanner_segment(char *target_buffer, FILE *fp) {
-    //scanner_data_offset = scanner_data_offset % scanner_data_length;
-    //int initial_offset = scanner_data_offset;
-
-    // +1, because we need to look at the first byte after the header
-    // in order to determine whether the segment ended after it, which is
-    // indicated by two consecutive line-feeds.
     char header[SCANNER_HEADER_SIZE];
     char data[SCANNER_DATA_SIZE];
 

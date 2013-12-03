@@ -187,20 +187,20 @@ int main(int argc, const char *argv[]) {
         exit(1);
     }
 
-    status = load_input_file(argv[1]);
-    if(status != 0) {
-        fprintf(stderr, "'Could not load input file' near line %d.\n", __LINE__);
+    FILE *fp = fopen(argv[1], "rb");
+    if(fp == NULL) {
+        fprintf(stderr, "'Could not open file %s' near line %d.\n", argv[1], __LINE__);
         exit(1);
     }
 
     initMemory();
-    printf("done11\n");
 
     char databuffer[SCANNER_SEGMENT_SIZE];
     int bytes_read;
 
+
     while(1) {
-        bytes_read = read_scanner_segment(databuffer);
+        bytes_read = read_scanner_segment(databuffer, fp);
         if(bytes_read != 1616) {
             fprintf(stderr, "Read non-data scanner segment. Skipping\n");
             continue;
@@ -210,7 +210,7 @@ int main(int argc, const char *argv[]) {
         printf("timestamp: %d\n", timestamp);
         int obid = detect_obstacle_segments(distance);
         printf("obid: %d\n", obid);
-        break;
+
     }
     return 0;
 }

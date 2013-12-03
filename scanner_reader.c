@@ -1,6 +1,7 @@
 #include <stdio.h> /* for fprintf and stderr */
 #include <stdlib.h> /* for exit */
 #include <string.h>
+#include <stdbool.h>
 
 #include "scanner_reader.h"
 
@@ -29,30 +30,46 @@ int load_input_file(const char *file_path) {
     return 0;
 }
 
+void scanner_read(void *ptr, size_t bytes, FILE *fp) {
+    size_t objects_read = fread(ptr, bytes, 1, fp);
+    //fprintf(stderr, "read: %d, to-read: %d\n", bytes_read, bytes);
+    if(objects_read != 1) {
+        fprintf(stderr, "'Couldn't read %d bytes from file' near line %d.\n", bytes, __LINE__);
+        exit(1);
+    }
+}
+
+
+char *carry_buffer;
+int carried_bytes = 0;
+bool carry_buffer_allocated = false;
+
 /**
  * Reads an SICP2.0 segment and writes it to the given buffer, who's size should
  * at least be equal to SCANNER_SEGMENT_SIZE.
  * @return bytes read
  */
-int read_scanner_segment(char *target_buffer) {
-    scanner_data_offset = scanner_data_offset % scanner_data_length;
-    int initial_offset = scanner_data_offset;
+int read_scanner_segment(char *target_buffer, FILE *fp) {
+    //scanner_data_offset = scanner_data_offset % scanner_data_length;
+    //int initial_offset = scanner_data_offset;
 
-    char *source = scanner_data + scanner_data_offset;
-    if(source[0] != 'M' || source[1] != 'D') {
-        printf("first two bytes of segment: '%c%c'\n", source[0], source[1]);
+    // +1, because we need to look at the first byte after the header
+    // in order to determine whether the segment ended after it, which is
+    // indicated by two consecutive line-feeds.
+    char header[SCANNER_HEADER_SIZE];
+    char data[SCANNER_DATA_SIZE];
+
+    scanner_read(header, SCANNER_HEADER_SIZE, fp);
+
+    if(header[0] != 'M' || header[1] != 'D') {
+        printf("first two bytes of segment: '%c%c'\n", header[0], header[1]);
         fprintf(stderr, "Reading scanner segment failed. Unexpected input.");
         exit(1);
     }
 
-    int i = 2;
-    // Skip command echo
-    while(source[i] != '\n' && i < scanner_data_length) { i++; }
-    i++; // Skip LF
-
     char status[3];
-    status[0] = source[i];
-    status[1] = source[i+1];
+    status[0] = header[16];
+    status[1] = header[17];
     status[2] = '\0';
 
     int status_code = atoi(status);
@@ -62,28 +79,29 @@ int read_scanner_segment(char *target_buffer) {
         exit(1);
     }
 
-    i += 2; // Skip status code...
-    i += 1; // ... sum
-    i += 1; // ... and LF
-
-    // Early end of segment, indicated by two LF
-    if(source[i] == '\n') {
-        i++;
-        scanner_data_offset += i;
-        return scanner_data_offset - initial_offset;
+    // Make sure the header is correct
+    if(header[19] != '\n') {
+        fprintf(stderr, "Malformed SCIP2.0 header. Did not have line-feed at offset 20.\n");
+        exit(1);
     }
 
-    int data_start = i;
+    char begin_of_data[1];
+    scanner_read(begin_of_data, 1, fp);
 
-    // Seek end of data, which is indicated by "SUM (1-byte),LF,LF"
-    while(!(source[i+2] == '\n' && source[i+3] == '\n') && (i+3) < scanner_data_length) {
-        i++;
+    // Early end of packet, which did not contain any data.
+    if(begin_of_data[0] == '\n') {
+        return SCANNER_HEADER_SIZE + 1; // +1 since we read the additional LF
     }
-    i++; // Include the last char
 
-    int data_length = i - data_start;
-    strncpy(target_buffer, source + data_start, data_length);
-    scanner_data_offset += i + 3; // 3 = Sum + LF + LF
+    data[0] = begin_of_data[0];
+    scanner_read(data+1, SCANNER_DATA_SIZE - 1, fp); // -1 since we already read one byte
 
-    return scanner_data_offset - initial_offset;
+    if(data[SCANNER_DATA_SIZE - 1] != '\n' || data[SCANNER_DATA_SIZE - 2] != '\n') {
+        fprintf(stderr, "Malformed SCIP2.0 data packet. End of data was not found at %d bytes.\n", SCANNER_SEGMENT_SIZE);
+        exit(1);
+    }
+
+    strncpy(target_buffer, data, SCANNER_DATA_SIZE - 3);
+
+    return SCANNER_SEGMENT_SIZE;
 }

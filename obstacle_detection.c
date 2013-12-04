@@ -1,10 +1,20 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
+#include <math.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #include "obstacle_detection.h"
 
 // threshold to decide new or same segment is dynamically calculated by this factor
 const float THRESHOLD_FACTOR = 0.033f; // 16.5mm divided by 500mm
+
+// draw laserscanner at this position
+const float X_CENTER = 1001.0f;
+const float Y_CENTER = 308.0f;
 
 int nearest_steps[128]; // index = Obstacle-ID, integer-value = Nearest-Step of Obstacle
 int first_steps[128]; // index = Obstacle-ID, integer-value = First-Step of Obstacle
@@ -13,10 +23,46 @@ int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstac
 int timestamp = 0; // 24 bit timestamp received from laserscanner
 int distances[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
 
+
+unsigned int sckt;
 void obstacle_detection_init_memory() {
     timestamp = -1;
     for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
         distances[i] = 0; // initialize array of distances
+    }
+
+    unsigned int s;
+    struct sockaddr_un local, remote;
+    unsigned int len;
+    int status;
+
+    s = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(s == -1) {
+        fprintf(stderr, "'Could not create socket' near line %d.\n", __LINE__);
+        exit(1);
+    }
+
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, "/Users/lucas/testsckt");
+    unlink(local.sun_path);
+    len = strlen(local.sun_path) + sizeof(local.sun_family) + 1;
+    status = bind(s, (struct sockaddr *) &local, len);
+    if(status == -1) {
+        fprintf(stderr, "'Could not bind to socket' near line %d.\n", __LINE__);
+        exit(1);
+    }
+
+    listen(s, 1);
+    if(status == -1) {
+        fprintf(stderr, "'Could not listen to socket' near line %d.\n", __LINE__);
+        exit(1);
+    }
+
+    len = sizeof(struct sockaddr_un);
+    sckt = accept(s, (struct sockaddr *) &remote, &len);
+    if(sckt == -1) {
+        fprintf(stderr, "'Failed accepting socket connection' near line %d.\n", __LINE__);
+        exit(1);
     }
 }
 
@@ -113,4 +159,55 @@ int detect_obstacle_segments() {
 
     // Number of obstacles found. +1 since obid counts from 0.
     return obid + 1;
+}
+
+void sendDrawCommand(char *cmd) {
+    int status;
+    status = send(sckt, cmd, strlen(cmd), 0);
+    if(status == -1) {
+        fprintf(stderr, "'Failed to send message to socket' near line %d.\n", __LINE__);
+        perror("send()");
+        exit(1);
+    }
+
+}
+
+void visualize() {
+    int obid = 0;
+    int i;
+
+    float g = 90; // start angle from +90 till -90 degrees
+    float l = 0.0f; // length of line to be drawn on the surface
+
+    for(i = 0; i < DISTANCE_VALUE_COUNT; i++) {
+        g = i * RESOLUTION; // drawing angle
+        l = (float) (distances[i] >> 2); // length of line
+
+        // in case this is a nearest-step of an obstacle
+        if(nearest_steps[obid] == i) {
+            // array out-of-bound check
+            if((first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (last_steps[obid] - 1 > 0)) {
+                //doRANSAC(obid); // calculate and draw triangle-model
+            }
+
+            float x = X_CENTER - l * sin(g * M_PI / 180.0);
+            float y = Y_CENTER - l * cos(g * M_PI / 180.0);
+
+            char cmd[128];
+            sprintf(cmd, "{'type': 'text', 'text': 'ID: %d', 'x': %f, 'y': %f}\n", obid, x, y);
+            sendDrawCommand(cmd);
+
+            obid++; // continue with next obstacle
+
+        } else { // default distance in black
+            //paint.setColor(android.graphics.Color.BLACK);
+        }
+
+        float x = X_CENTER - l * sin(g * M_PI / 180.0);
+        float y = Y_CENTER - l * cos(g * M_PI / 180.0);
+
+        char cmd[128];
+        sprintf(cmd, "{'type': 'line', 'x1': %f, 'y1': %f, 'x2': %f, 'y2': %f}\n", X_CENTER, Y_CENTER, x, y);
+        sendDrawCommand(cmd);
+    }
 }

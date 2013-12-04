@@ -5,12 +5,6 @@
 #include "scanner_reader.h"
 #include "obstacle_detection.h"
 
-const float RESOLUTION = 0.3515625f;  // 360 divided by 1024 degrees
-
-// draw laserscanner at this position
-const float X_CENTER = 1001.0f;
-const float Y_CENTER = 308.0f;
-
 pthread_t workerThread1; // pointers to control the used worker-thread object
 pthread_t workerThread2;
 pthread_mutex_t mutexMEM; // mutex for shared memory used by segmentation and for canvas used as visualization
@@ -92,6 +86,7 @@ int main(int argc, const char *argv[]) {
         printf("timestamp: %d\n", timestamp);
         int obid = detect_obstacle_segments();
         printf("obid: %d\n", obid);
+        visualize();
 
     }
     return 0;

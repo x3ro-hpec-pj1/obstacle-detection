@@ -10,6 +10,15 @@ int nearest_steps[128]; // index = Obstacle-ID, integer-value = Nearest-Step of 
 int first_steps[128]; // index = Obstacle-ID, integer-value = First-Step of Obstacle
 int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstacle
 
+int timestamp = 0; // 24 bit timestamp received from laserscanner
+int distances[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
+
+void obstacle_detection_init_memory() {
+    timestamp = -1;
+    for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
+        distances[i] = 0; // initialize array of distances
+    }
+}
 
 /**
  * Parses the given scanner segment, extracting the distance values and writing
@@ -21,7 +30,7 @@ int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstac
  * @param  distances
  * @return The SICP2.0 timestamp of the parsed scanner segment.
  */
-int evaluate_scanner_segment(char *segment, int *distances) {
+int evaluate_scanner_segment(char *segment) {
     int timestamp;
 
     timestamp = segment[0] - 0x30;
@@ -66,7 +75,7 @@ int evaluate_scanner_segment(char *segment, int *distances) {
  * Perform obstacle detection on the scanner's distance values.
  * @return Number of obstacles that were detected.
  */
-int detect_obstacle_segments(int *distances) {
+int detect_obstacle_segments() {
     int i;
 
     // Initialize loop variables

@@ -18,9 +18,6 @@ pthread_mutex_t mutexUSB; // mutex for USB-access used to receive measurement da
 
 char *startScanMScommand = NULL;
 
-int timestamp = 0; // 24 bit timestamp received from laserscanner
-int distance[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
-
 
 void initMemory() {
     int status;
@@ -36,10 +33,7 @@ void initMemory() {
         exit(1);
     }
 
-    timestamp = -1;
-    for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
-        distance[i] = 0; // initialize array of distances
-    }
+    obstacle_detection_init_memory();
 
     status = pthread_mutex_unlock(&mutexMEM);
     if(status != 0) {
@@ -70,8 +64,6 @@ void run() {
 
 
 int main(int argc, const char *argv[]) {
-    int status;
-
     if(argc != 2) {
         fprintf(stderr, "'Please supply the input file as the only argument' near line %d.\n", __LINE__);
         exit(1);
@@ -96,9 +88,9 @@ int main(int argc, const char *argv[]) {
             continue;
         }
 
-        int timestamp = evaluate_scanner_segment(databuffer, distance);
+        int timestamp = evaluate_scanner_segment(databuffer);
         printf("timestamp: %d\n", timestamp);
-        int obid = detect_obstacle_segments(distance);
+        int obid = detect_obstacle_segments();
         printf("obid: %d\n", obid);
 
     }

@@ -19,7 +19,7 @@ pthread_mutex_t mutexUSB; // mutex for USB-access used to receive measurement da
 char *startScanMScommand = NULL;
 
 
-void initMemory() {
+void init_memory() {
     int status;
     status = pthread_mutex_init(&mutexMEM, NULL);
     if(status != 0) {
@@ -75,7 +75,7 @@ int main(int argc, const char *argv[]) {
         exit(1);
     }
 
-    initMemory();
+    init_memory();
 
     char databuffer[SCANNER_SEGMENT_SIZE];
     int bytes_read;

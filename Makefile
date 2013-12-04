@@ -1,7 +1,7 @@
 CC=clang
 CFLAGS=-Wall
-DEPS = scanner_reader.h
-OBJ = scanner_reader.o main.o
+DEPS = scanner_reader.h obstacle_detection.h
+OBJ = scanner_reader.o obstacle_detection.o main.o
 NAME=cimpl
 
 all: $(NAME)

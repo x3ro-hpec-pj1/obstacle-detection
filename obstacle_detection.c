@@ -23,6 +23,7 @@ int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstac
 int timestamp = 0; // 24 bit timestamp received from laserscanner
 int distances[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
 
+int sendCount = 0;
 
 unsigned int sckt;
 void obstacle_detection_init_memory() {
@@ -162,8 +163,14 @@ int detect_obstacle_segments() {
 }
 
 void sendDrawCommand(char *cmd) {
+    char buffer[261]; // 256 + 5 bytes length indicator
+    int length = strlen(cmd);
+    sprintf(buffer, "%03d%s", length, cmd);
+
     int status;
-    status = send(sckt, cmd, strlen(cmd), 0);
+
+    sendCount++;
+    status = send(sckt, buffer, strlen(buffer), 0);
     if(status == -1) {
         fprintf(stderr, "'Failed to send message to socket' near line %d.\n", __LINE__);
         perror("send()");
@@ -193,8 +200,8 @@ void visualize() {
             float x = X_CENTER - l * sin(g * M_PI / 180.0);
             float y = Y_CENTER - l * cos(g * M_PI / 180.0);
 
-            char cmd[128];
-            sprintf(cmd, "{'type': 'text', 'text': 'ID: %d', 'x': %f, 'y': %f}\n", obid, x, y);
+            char cmd[256];
+            sprintf(cmd, "{\"type\": \"text\", \"text\": \"ID: %d\", \"x\": %f, \"y\": %f}\n", obid, x, y);
             sendDrawCommand(cmd);
 
             obid++; // continue with next obstacle
@@ -206,8 +213,10 @@ void visualize() {
         float x = X_CENTER - l * sin(g * M_PI / 180.0);
         float y = Y_CENTER - l * cos(g * M_PI / 180.0);
 
-        char cmd[128];
-        sprintf(cmd, "{'type': 'line', 'x1': %f, 'y1': %f, 'x2': %f, 'y2': %f}\n", X_CENTER, Y_CENTER, x, y);
+        char cmd[256];
+        sprintf(cmd, "{\"type\": \"line\", \"x1\": %f, \"y1\": %f, \"x2\": %f, \"y2\": %f}\n", X_CENTER, Y_CENTER, x, y);
         sendDrawCommand(cmd);
     }
+
+    sendDrawCommand("\n");
 }

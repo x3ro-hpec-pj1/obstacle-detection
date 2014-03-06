@@ -9,6 +9,8 @@
 
 #include "obstacle_detection.h"
 
+#define MAX_CMD_LENGTH 256
+
 // threshold to decide new or same segment is dynamically calculated by this factor
 const float THRESHOLD_FACTOR = 0.033f; // 16.5mm divided by 500mm
 
@@ -163,12 +165,15 @@ int detect_obstacle_segments() {
 }
 
 void sendDrawCommand(char *cmd) {
-    char buffer[261]; // 256 + 5 bytes length indicator
-    int length = strlen(cmd);
-    sprintf(buffer, "%03d%s", length, cmd);
+    char buffer[MAX_CMD_LENGTH + 4]; // MAX_CMD_LENGTH + 3 bytes length indicator + 1 newline
+    int length = strlen(cmd) + 1;
+
+    // I'm aware that passing the length in ASCII is horribly inefficient, thank
+    // you. But it makes it easy to debug because I can just `cat` the socket,
+    // so I don't care. Feel free to optimize :)
+    sprintf(buffer, "%03d%s\n", length, cmd);
 
     int status;
-
     sendCount++;
     status = send(sckt, buffer, strlen(buffer), 0);
     if(status == -1) {

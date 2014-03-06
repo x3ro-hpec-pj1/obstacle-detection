@@ -1,7 +1,10 @@
+SHELL=csh
+
 JANSSON_DIR=./lib/jansson
+JANSSON_LIB=$(JANSSON_DIR)/src/.libs
 
 CC=clang
-CFLAGS=-I$(JANSSON_DIR)/src -L$(JANSSON_DIR)/src/.libs -ljansson -Wall -g
+CFLAGS=-I$(JANSSON_DIR)/src -L$(JANSSON_LIB) -ljansson -Wall -g
 DEPS = scanner_reader.h obstacle_detection.h
 OBJ = scanner_reader.o obstacle_detection.o main.o
 NAME=cimpl
@@ -14,10 +17,10 @@ all: $(NAME)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 run: $(NAME)
-	./$^ ../res/scanner.out
+	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ ../res/scanner.out
 
 debug: $(NAME)
-	lldb ./$^ ../res/scanner.out
+	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; lldb ./$^ ../res/scanner.out
 
 
 

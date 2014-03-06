@@ -5,8 +5,8 @@ JANSSON_LIB=$(JANSSON_DIR)/src/.libs
 
 CC=clang
 CFLAGS=-I$(JANSSON_DIR)/src -L$(JANSSON_LIB) -ljansson -Wall -g
-DEPS = scanner_reader.h obstacle_detection.h
-OBJ = scanner_reader.o obstacle_detection.o main.o
+DEPS = rpc.h scanner_reader.h obstacle_detection.h
+OBJ = rpc.o scanner_reader.o obstacle_detection.o main.o
 NAME=cimpl
 
 all: $(NAME)
@@ -24,7 +24,7 @@ debug: $(NAME)
 
 
 
-$(NAME): $(OBJ) jansson
+$(NAME): jansson $(OBJ)
 	$(CC) -o $@ $(CFLAGS) $(OBJ)
 
 clean: jansson_clean

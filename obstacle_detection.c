@@ -3,13 +3,10 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <unistd.h>
 
 #include "obstacle_detection.h"
-
-#define MAX_CMD_LENGTH 256
+#include "rpc.h"
 
 // threshold to decide new or same segment is dynamically calculated by this factor
 const float THRESHOLD_FACTOR = 0.033f; // 16.5mm divided by 500mm
@@ -25,48 +22,13 @@ int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstac
 int timestamp = 0; // 24 bit timestamp received from laserscanner
 int distances[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
 
-int sendCount = 0;
-
-unsigned int sckt;
 void obstacle_detection_init_memory() {
     timestamp = -1;
     for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
         distances[i] = 0; // initialize array of distances
     }
 
-    unsigned int s;
-    struct sockaddr_un local, remote;
-    unsigned int len;
-    int status;
-
-    s = socket(AF_UNIX, SOCK_STREAM, 0);
-    if(s == -1) {
-        fprintf(stderr, "'Could not create socket' near line %d.\n", __LINE__);
-        exit(1);
-    }
-
-    local.sun_family = AF_UNIX;
-    strcpy(local.sun_path, "/Users/lucas/testsckt");
-    unlink(local.sun_path);
-    len = strlen(local.sun_path) + sizeof(local.sun_family) + 1;
-    status = bind(s, (struct sockaddr *) &local, len);
-    if(status == -1) {
-        fprintf(stderr, "'Could not bind to socket' near line %d.\n", __LINE__);
-        exit(1);
-    }
-
-    listen(s, 1);
-    if(status == -1) {
-        fprintf(stderr, "'Could not listen to socket' near line %d.\n", __LINE__);
-        exit(1);
-    }
-
-    len = sizeof(struct sockaddr_un);
-    sckt = accept(s, (struct sockaddr *) &remote, &len);
-    if(sckt == -1) {
-        fprintf(stderr, "'Failed accepting socket connection' near line %d.\n", __LINE__);
-        exit(1);
-    }
+    initializeRPC();
 }
 
 /**
@@ -164,25 +126,6 @@ int detect_obstacle_segments() {
     return obid + 1;
 }
 
-void sendDrawCommand(char *cmd) {
-    char buffer[MAX_CMD_LENGTH + 4]; // MAX_CMD_LENGTH + 3 bytes length indicator + 1 newline
-    int length = strlen(cmd) + 1;
-
-    // I'm aware that passing the length in ASCII is horribly inefficient, thank
-    // you. But it makes it easy to debug because I can just `cat` the socket,
-    // so I don't care. Feel free to optimize :)
-    sprintf(buffer, "%03d%s\n", length, cmd);
-
-    int status;
-    sendCount++;
-    status = send(sckt, buffer, strlen(buffer), 0);
-    if(status == -1) {
-        fprintf(stderr, "'Failed to send message to socket' near line %d.\n", __LINE__);
-        perror("send()");
-        exit(1);
-    }
-
-}
 
 void visualize() {
     int obid = 0;
@@ -205,9 +148,9 @@ void visualize() {
             float x = X_CENTER - l * sin(g * M_PI / 180.0);
             float y = Y_CENTER - l * cos(g * M_PI / 180.0);
 
-            char cmd[256];
-            sprintf(cmd, "{\"type\": \"text\", \"text\": \"ID: %d\", \"x\": %f, \"y\": %f}\n", obid, x, y);
-            sendDrawCommand(cmd);
+            char text[256];
+            sprintf(text, "ID: %d", obid);
+            sendDrawText(text, x, y);
 
             obid++; // continue with next obstacle
 
@@ -217,11 +160,7 @@ void visualize() {
 
         float x = X_CENTER - l * sin(g * M_PI / 180.0);
         float y = Y_CENTER - l * cos(g * M_PI / 180.0);
-
-        char cmd[256];
-        sprintf(cmd, "{\"type\": \"line\", \"x1\": %f, \"y1\": %f, \"x2\": %f, \"y2\": %f}\n", X_CENTER, Y_CENTER, x, y);
-        sendDrawCommand(cmd);
+        sendDrawLine(X_CENTER, Y_CENTER, x, y);
     }
-
-    sendDrawCommand("\n");
+    sendDrawClear();
 }

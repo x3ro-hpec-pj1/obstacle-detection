@@ -1,0 +1,96 @@
+#include <string.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
+#include "rpc.h"
+#include <jansson.h>
+
+int sendCount = 0;
+unsigned int sckt;
+
+void initializeRPC() {
+    unsigned int s;
+    struct sockaddr_un local, remote;
+    unsigned int len;
+    int status;
+
+    s = socket(AF_UNIX, SOCK_STREAM, 0);
+    if(s == -1) {
+        fprintf(stderr, "'Could not create socket' near line %d.\n", __LINE__);
+        exit(1);
+    }
+
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, "/Users/lucas/testsckt");
+    unlink(local.sun_path);
+    len = strlen(local.sun_path) + sizeof(local.sun_family) + 1;
+    status = bind(s, (struct sockaddr *) &local, len);
+    if(status == -1) {
+        fprintf(stderr, "'Could not bind to socket' near line %d.\n", __LINE__);
+        exit(1);
+    }
+
+    listen(s, 1);
+    if(status == -1) {
+        fprintf(stderr, "'Could not listen to socket' near line %d.\n", __LINE__);
+        exit(1);
+    }
+
+    len = sizeof(struct sockaddr_un);
+    sckt = accept(s, (struct sockaddr *) &remote, &len);
+    if(sckt == -1) {
+        fprintf(stderr, "'Failed accepting socket connection' near line %d.\n", __LINE__);
+        exit(1);
+    }
+}
+
+void sendCommand(json_t *cmd) {
+    char *cmd_str = json_dumps(cmd, JSON_COMPACT|JSON_PRESERVE_ORDER);
+
+    char buffer[MAX_CMD_LENGTH + 4]; // MAX_CMD_LENGTH + 3 bytes length indicator + 1 newline
+    int length = strlen(cmd_str) + 1; // + 1 newline
+
+    // I'm aware that passing the length in ASCII is horribly inefficient, thank
+    // you. But it makes it easy to debug because I can just `cat` the socket,
+    // so I don't care. Feel free to optimize :)
+    sprintf(buffer, "%03d%s\n", length, cmd_str);
+
+    int status;
+    sendCount++;
+    status = send(sckt, buffer, strlen(buffer), 0);
+    free(cmd_str);
+
+    if(status == -1) {
+        fprintf(stderr, "'Failed to send message to socket' near line %d.\n", __LINE__);
+        perror("send()");
+        exit(1);
+    }
+}
+
+void sendDrawClear() {
+    json_t *cmd = json_pack("{s:s}", "type", "clear");
+    sendCommand(cmd);
+}
+
+void sendDrawText(char* text, float x, float y) {
+    json_t *cmd = json_pack("{s:s, s:s, s:f, s:f}",
+        "type", "text",
+        "text", text,
+        "x", x,
+        "y", y
+    );
+    sendCommand(cmd);
+}
+
+void sendDrawLine(float x1, float y1, float x2, float y2) {
+    json_t *cmd = json_pack("{s:s, s:f, s:f, s:f, s:f}",
+        "type", "line",
+        "x1", x1,
+        "y1", y1,
+        "x2", x2,
+        "y2", y2
+    );
+    sendCommand(cmd);
+}

@@ -56,7 +56,7 @@ void sendCommand(json_t *cmd) {
     // I'm aware that passing the length in ASCII is horribly inefficient, thank
     // you. But it makes it easy to debug because I can just `cat` the socket,
     // so I don't care. Feel free to optimize :)
-    sprintf(buffer, "%05d%s\n", cmd_length, cmd_str);
+    sprintf(buffer, "%05d%s\n", cmd_length+1, cmd_str);
 
     int status;
     sendCount++;

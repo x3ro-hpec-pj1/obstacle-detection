@@ -9,10 +9,10 @@
 
 
 int sendCount = 0;
-unsigned int sckt;
+int sckt;
 
 void initializeRPC() {
-    unsigned int s;
+    int s;
     struct sockaddr_un local, remote;
     unsigned int len;
     int status;

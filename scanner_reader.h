@@ -6,8 +6,6 @@
 #define SCANNER_HEADER_SIZE 20
 #define SCANNER_DATA_SIZE (SCANNER_SEGMENT_SIZE - SCANNER_HEADER_SIZE)
 
-int load_input_file(const char *file_path);
 int read_scanner_segment(char *target_buffer, FILE *fp);
-
 
 #endif

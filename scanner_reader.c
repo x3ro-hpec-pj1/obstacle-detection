@@ -9,27 +9,6 @@ int scanner_data_offset = 0;
 int scanner_data_length = -1;
 char *scanner_data;
 
-int load_input_file(const char *file_path) {
-    FILE *fp = fopen(file_path, "rb");
-    if(fp == NULL) {
-        fprintf(stderr, "'Could not open file at path %s' near line %d.\n", file_path, __LINE__);
-        exit(1);
-    }
-
-    fseek(fp, 0L, SEEK_END);
-    int length = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
-    scanner_data = calloc(1, length+1);
-    fread(scanner_data, length, 1, fp);
-
-    scanner_data[length] = '\0';
-    scanner_data_length = length;
-
-    fclose(fp);
-    return 0;
-}
-
 void scanner_read(void *ptr, size_t bytes, FILE *fp) {
     size_t objects_read = fread(ptr, bytes, 1, fp);
     if(objects_read != 1) {

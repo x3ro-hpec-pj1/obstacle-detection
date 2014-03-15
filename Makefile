@@ -21,6 +21,9 @@ run: $(NAME)
 debug: $(NAME)
 	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; lldb ./$^ ../res/scanner.out
 
+run_scanner: $(NAME)
+	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ /dev/cu.usbmodemfa131
+
 $(NAME): jansson $(OBJ)
 	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(OBJ)
 

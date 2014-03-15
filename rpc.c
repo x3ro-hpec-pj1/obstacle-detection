@@ -3,9 +3,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <jansson.h>
 
 #include "rpc.h"
-#include <jansson.h>
+
 
 int sendCount = 0;
 unsigned int sckt;
@@ -48,19 +49,20 @@ void initializeRPC() {
 
 void sendCommand(json_t *cmd) {
     char *cmd_str = json_dumps(cmd, JSON_COMPACT|JSON_PRESERVE_ORDER);
+    int cmd_length = strlen(cmd_str);
 
-    char buffer[MAX_CMD_LENGTH + 4]; // MAX_CMD_LENGTH + 3 bytes length indicator + 1 newline
-    int length = strlen(cmd_str) + 1; // + 1 newline
+    char *buffer = malloc(cmd_length + 6); // 6 =  5 bytes length indicator + 1 newline
 
     // I'm aware that passing the length in ASCII is horribly inefficient, thank
     // you. But it makes it easy to debug because I can just `cat` the socket,
     // so I don't care. Feel free to optimize :)
-    sprintf(buffer, "%03d%s\n", length, cmd_str);
+    sprintf(buffer, "%05d%s\n", cmd_length, cmd_str);
 
     int status;
     sendCount++;
     status = send(sckt, buffer, strlen(buffer), 0);
     free(cmd_str);
+    free(buffer);
 
     if(status == -1) {
         fprintf(stderr, "'Failed to send message to socket' near line %d.\n", __LINE__);
@@ -69,22 +71,18 @@ void sendCommand(json_t *cmd) {
     }
 }
 
-void sendDrawClear() {
-    json_t *cmd = json_pack("{s:s}", "type", "clear");
-    sendCommand(cmd);
-}
-
-void sendDrawText(char* text, float x, float y) {
+void drawText(json_t *frame, char* text, float x, float y) {
     json_t *cmd = json_pack("{s:s, s:s, s:f, s:f}",
         "type", "text",
         "text", text,
         "x", x,
         "y", y
     );
-    sendCommand(cmd);
+    json_array_append(frame, cmd);
+    json_decref(cmd);
 }
 
-void sendDrawLine(float x1, float y1, float x2, float y2) {
+void drawLine(json_t *frame, float x1, float y1, float x2, float y2) {
     json_t *cmd = json_pack("{s:s, s:f, s:f, s:f, s:f}",
         "type", "line",
         "x1", x1,
@@ -92,5 +90,6 @@ void sendDrawLine(float x1, float y1, float x2, float y2) {
         "x2", x2,
         "y2", y2
     );
-    sendCommand(cmd);
+    json_array_append(frame, cmd);
+    json_decref(cmd);
 }

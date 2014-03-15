@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <math.h>
 #include <unistd.h>
+#include <jansson.h>
 
 #include "obstacle_detection.h"
 #include "rpc.h"
@@ -134,6 +135,9 @@ void visualize() {
     float g = 90; // start angle from +90 till -90 degrees
     float l = 0.0f; // length of line to be drawn on the surface
 
+    // Drawing instructions for the current frame are inserted here
+    json_t *frame = json_array();
+
     for(i = 0; i < DISTANCE_VALUE_COUNT; i++) {
         g = i * RESOLUTION; // drawing angle
         l = (float) (distances[i] >> 2); // length of line
@@ -150,7 +154,7 @@ void visualize() {
 
             char text[256];
             sprintf(text, "ID: %d", obid);
-            sendDrawText(text, x, y);
+            drawText(frame, text, x, y);
 
             obid++; // continue with next obstacle
 
@@ -160,7 +164,9 @@ void visualize() {
 
         float x = X_CENTER - l * sin(g * M_PI / 180.0);
         float y = Y_CENTER - l * cos(g * M_PI / 180.0);
-        sendDrawLine(X_CENTER, Y_CENTER, x, y);
+        drawLine(frame, X_CENTER, Y_CENTER, x, y);
     }
-    sendDrawClear();
+
+    sendCommand(frame);
+    json_decref(frame);
 }

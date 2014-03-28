@@ -58,22 +58,22 @@ void run() {
 
 
 int main(int argc, const char *argv[]) {
+    setbuf(stdout, NULL); // Disable buffering for stdout
+
     if(argc != 2) {
         fprintf(stderr, "'Please supply the input file as the only argument' near line %d.\n", __LINE__);
         exit(1);
     }
 
-    FILE *fp = fopen(argv[1], "rb");
-    if(fp == NULL) {
-        fprintf(stderr, "'Could not open file %s' near line %d.\n", argv[1], __LINE__);
-        exit(1);
-    }
+    printf("\nInitializing\n");
 
+    FILE *fp = scanner_open(argv[1]);
     init_memory();
 
     char databuffer[SCANNER_SEGMENT_SIZE];
     int bytes_read;
 
+    printf("Initialization complete\nFrames processed: ");
 
     while(1) {
         bytes_read = read_scanner_segment(databuffer, fp);
@@ -82,12 +82,11 @@ int main(int argc, const char *argv[]) {
             continue;
         }
 
-        int timestamp = evaluate_scanner_segment(databuffer);
-        printf("timestamp: %d\n", timestamp);
-        int obid = detect_obstacle_segments();
-        printf("obid: %d\n", obid);
+        evaluate_scanner_segment(databuffer);
+        detect_obstacle_segments();
         visualize();
 
+        printf(".");
     }
     return 0;
 }

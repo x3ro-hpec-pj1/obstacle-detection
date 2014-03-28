@@ -2,12 +2,100 @@
 #include <stdlib.h> /* for exit */
 #include <string.h>
 #include <stdbool.h>
+#include <fcntl.h> /* open syscall */
+#include <sys/stat.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 #include "scanner_reader.h"
 
 int scanner_data_offset = 0;
 int scanner_data_length = -1;
 char *scanner_data;
+
+int fd = -1;
+FILE *fp = NULL;
+bool scanner_attached = false;
+
+static bool scanner_initialized = false;
+
+FILE *scanner_open(const char *path) {
+    int status;
+    struct stat fd_stat;
+
+    fd = open(path, O_RDWR);
+    if(fd == -1) {
+        fprintf(stderr, "Could not open file %s (%s:%d).\n", path, __FILE__, __LINE__);
+        perror("Error");
+        exit(1);
+    }
+
+    fp = fdopen(fd, "r+b");
+    if(fp == NULL) {
+        fprintf(stderr, "Could not open file %s (%s:%d).\n", path, __FILE__, __LINE__);
+        perror("Error");
+        exit(1);
+    }
+
+    status = fstat(fd, &fd_stat);
+    if(status == -1) {
+        fprintf(stderr, "Unable to stat file %s (%s:%d).\n", path, __FILE__, __LINE__);
+        exit(1);
+    }
+
+    if(!S_ISREG(fd_stat.st_mode)) {
+        printf("Laser scanner seems to be attached");
+        scanner_attached = true;
+    } else {
+        printf("Laser scanner does NOT seem to be attached");
+    }
+    printf(" (S_ISCHR: %d, S_ISREG: %d).\n", S_ISCHR(fd_stat.st_mode), S_ISREG(fd_stat.st_mode));
+
+    scanner_initialize(fp);
+    return fp;
+}
+
+void scanner_initialize(FILE *fp) {
+    scanner_initialized = true;
+
+    // If we're reading from a file we don't need to send commands to the scanner.
+    if(!scanner_attached) {
+        return;
+    }
+
+    int fd = fileno(fp);
+
+    printf("Resetting laser scanner: ");
+
+    char *cmd = "RS\n";
+    write(fd, cmd, 3);
+
+    char buffer[1];
+
+    fd_set set_read;
+    FD_ZERO(&set_read);
+    FD_SET(fd, &set_read);
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+
+    while(1) {
+        int s = select(fd+1, &set_read, NULL, NULL, &timeout);
+
+        if(s != 1) {
+            break;
+        }
+        read(fd, buffer, 1);
+    }
+    printf("done\n");
+
+    printf("Initializing laser scanner: ");
+    cmd = "MD0128064001000\n";
+    write(fd, cmd, 16);
+    printf("done\n");
+}
 
 void scanner_read(void *ptr, size_t bytes, FILE *fp) {
     size_t objects_read = fread(ptr, bytes, 1, fp);

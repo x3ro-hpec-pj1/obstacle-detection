@@ -4,7 +4,7 @@ JANSSON_DIR=./lib/jansson
 JANSSON_LIB=$(JANSSON_DIR)/src/.libs
 
 CC=clang
-CFLAGS=-Werror -Wall -Wextra -I$(JANSSON_DIR)/src -g
+CFLAGS=-Werror -Wall -Wextra -I$(JANSSON_DIR)/src -O2 -g
 LDFLAGS=-L$(JANSSON_LIB) -ljansson
 DEPS = rpc.h scanner_reader.h obstacle_detection.h
 OBJ = rpc.o scanner_reader.o obstacle_detection.o main.o

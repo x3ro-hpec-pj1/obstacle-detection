@@ -1,6 +1,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include "scanner_reader.h"
 #include "obstacle_detection.h"
@@ -54,6 +56,9 @@ int main(int argc, const char *argv[]) {
 
     printf("Initialization complete\nFrames processed: ");
 
+    int segment_count = 0;
+    clock_t start = clock(), diff, now;
+
     while(1) {
         bytes_read = read_scanner_segment(databuffer, fp);
         if(bytes_read != 1616) {
@@ -65,7 +70,16 @@ int main(int argc, const char *argv[]) {
         detect_obstacle_segments();
         visualize();
 
-        printf(".");
+        segment_count++;
+
+        if((segment_count % 100) == 0) {;
+            now = clock();
+            diff = now - start;
+            double elapsed = diff*1.0 / CLOCKS_PER_SEC;
+            printf("Throughput: %f MB/s\n", (segment_count * 1616.0)/(elapsed)/1024/1024);
+            segment_count = 0;
+            start = now;
+        }
     }
     return 0;
 }

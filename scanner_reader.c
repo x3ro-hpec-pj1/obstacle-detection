@@ -120,9 +120,14 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
 
     scanner_read(header, SCANNER_HEADER_SIZE, fp);
 
+    // seek next frame
+    while(header[0] != 'M' || header[1] != 'D') {
+        scanner_read(header, SCANNER_HEADER_SIZE, fp);
+    }
+
     if(header[0] != 'M' || header[1] != 'D') {
         printf("first two bytes of segment: '%c%c'\n", header[0], header[1]);
-        fprintf(stderr, "Reading scanner segment failed. Unexpected input.");
+        fprintf(stderr, "Reading scanner segment failed. Unexpected input.\n");
         exit(1);
     }
 

@@ -36,27 +36,6 @@ void init_memory() {
     }
 }
 
-
-void run() {
-    // stores USB-datagram one for each thread, not in shared memory region
-    // char databuffer[SCANNER_SEGMENT_SIZE];
-
-    // float g = 90; // start angle from +90 till -90 degrees
-    // float l = 0.0f; // length of line to be drawn on the surface
-
-    // long timing = 0; // timestamp to measure time of segmentation-cycle
-    // int bytesreaded = 0; // return value of USB read routine
-    // int offbyone = 0; // needed to ensure error-tolerance while reading USB packets
-
-    // while(1) {
-
-    // }
-}
-
-
-
-
-
 int main(int argc, const char *argv[]) {
     setbuf(stdout, NULL); // Disable buffering for stdout
 

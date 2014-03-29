@@ -57,6 +57,30 @@ FILE *scanner_open(const char *path) {
     return fp;
 }
 
+/*
+ * Reads from the given file descriptor and discards the output until no more data is
+ * available. The consumed bytes are returned. If not timeout is given, a default of 1 second
+ * will be used.
+ */
+int fd_flush(int fd, struct timeval *timeout) {
+    char buffer[1];
+    fd_set set_read;
+    FD_ZERO(&set_read);
+    FD_SET(fd, &set_read);
+
+    int bytes_read = 0;
+    while(1) {
+        int s = select(fd+1, &set_read, NULL, NULL, timeout);
+        if(s != 1) {
+            break;
+        }
+        read(fd, buffer, 1);
+        bytes_read++;
+    }
+
+    return bytes_read;
+}
+
 void scanner_initialize(FILE *fp) {
     scanner_initialized = true;
 
@@ -66,34 +90,24 @@ void scanner_initialize(FILE *fp) {
     }
 
     int fd = fileno(fp);
-
     printf("Resetting laser scanner: ");
 
     char *cmd = "RS\n";
     write(fd, cmd, 3);
-
-    char buffer[1];
-
-    fd_set set_read;
-    FD_ZERO(&set_read);
-    FD_SET(fd, &set_read);
     struct timeval timeout;
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
+    fd_flush(fd, &timeout);
 
-    while(1) {
-        int s = select(fd+1, &set_read, NULL, NULL, &timeout);
-
-        if(s != 1) {
-            break;
-        }
-        read(fd, buffer, 1);
-    }
     printf("done\n");
 
+    // M=continuous, D=3byte-encoding, startangle=-90, endangle=+90,
+    // clustercount=1, skipinterval=0 --> 640-128 = 512 steps
     printf("Initializing laser scanner: ");
+
     cmd = "MD0128064001000\n";
     write(fd, cmd, 16);
+
     printf("done\n");
 }
 

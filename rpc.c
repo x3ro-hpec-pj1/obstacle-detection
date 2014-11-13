@@ -82,13 +82,19 @@ void drawText(json_t *frame, char* text, float x, float y) {
     json_decref(cmd);
 }
 
-void drawLine(json_t *frame, float x1, float y1, float x2, float y2) {
-    json_t *cmd = json_pack("{s:s, s:f, s:f, s:f, s:f}",
+// Color should be given in rgba format, i.e.
+//      color & 0xFF = alpha
+//      (color >> 8) & 0xFF = blue
+//      (color >> 16) & 0xFF = green
+//      (color >> 24) & 0xFF = red
+void drawLine(json_t *frame, float x1, float y1, float x2, float y2, unsigned int color) {
+    json_t *cmd = json_pack("{s:s, s:f, s:f, s:f, s:f, s:i}",
         "type", "line",
         "x1", x1,
         "y1", y1,
         "x2", x2,
-        "y2", y2
+        "y2", y2,
+        "color", color
     );
     json_array_append(frame, cmd);
     json_decref(cmd);

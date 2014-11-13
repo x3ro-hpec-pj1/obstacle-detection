@@ -21,6 +21,8 @@ void visualize(obstacle_detection_data* data) {
     float g = 90; // start angle from +90 till -90 degrees
     float l = 0.0f; // length of line to be drawn on the surface
 
+    char text[256];
+
     // Drawing instructions for the current frame are inserted here
     json_t *frame = json_array();
 
@@ -35,7 +37,6 @@ void visualize(obstacle_detection_data* data) {
             float x = X_CENTER - l * sin(g * M_PI / 180.0);
             float y = Y_CENTER - l * cos(g * M_PI / 180.0);
 
-            char text[256];
             sprintf(text, "ID: %d", obid);
             drawText(frame, text, x, y);
 
@@ -67,6 +68,9 @@ void visualize(obstacle_detection_data* data) {
         float y = Y_CENTER - l * cos(g * M_PI / 180.0);
         drawLine(frame, X_CENTER, Y_CENTER, x, y);
     }
+
+    sprintf(text, "Total objects found: %d", data->obid+1);
+    drawText(frame, text, X_CENTER + 100, Y_CENTER + 100);
 
     sendCommand(frame);
     json_decref(frame);

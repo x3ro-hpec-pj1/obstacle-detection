@@ -16,7 +16,10 @@ all: $(NAME)
 	$(CC)  $(CFLAGS) -c -o $@ $<
 
 run: $(NAME)
-	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ ../res/scanner.out
+	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ ../res/scanner2.out
+
+run_local: $(NAME)
+	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ ./scanner.out
 
 debug: $(NAME)
 	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; lldb ./$^ ../res/scanner.out

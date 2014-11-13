@@ -122,6 +122,7 @@ void detect_obstacle_segments(obstacle_detection_data* data) {
 }
 
 void do_ransac(obstacle_detection_data* data) {
+    int i;
     int obid = 0;
     int fcSetSum = 0; // First
     int lcSetSum = 0; // Last
@@ -136,9 +137,15 @@ void do_ransac(obstacle_detection_data* data) {
 
     double len, ang; // length and angle variable used repeatly for multiple uses
 
-    for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
-        if(data->nearest_steps[obid] == i) {
-            if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) {
+
+    for(i = 0; i < DISTANCE_VALUE_COUNT; i++) {
+        fcSetSum = 0;
+        lcSetSum = 0;
+        scSetSum = 0;
+        cSetSum = 0;
+
+        if(data->nearest_steps[obid] == i) { // in case this is a nearest-step of an obstacle
+            if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) { // array out-of-bound check
 
                 // Nearest Segmentpoint
                 ang = data->nearest_steps[obid] * RESOLUTION;

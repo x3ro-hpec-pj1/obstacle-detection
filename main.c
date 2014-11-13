@@ -74,6 +74,7 @@ int main(int argc, const char *argv[]) {
         detect_obstacle_segments(data);
         do_ransac(data);
         visualize(data);
+        obstacle_detection_zero_memory(data);
 
         segment_count++;
 

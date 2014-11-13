@@ -43,11 +43,16 @@ typedef struct obstacle_detection_data {
     ransac_triangle ransac_results[MAXIMUM_DETECTABLE_OBJECTS];
 } obstacle_detection_data;
 
+
+
+
 /**
  * Creates and initializes an obstacle_detection_data struct and returns
  * a pointer to it. This pointer must be manually freed.
  */
 obstacle_detection_data* obstacle_detection_init_memory();
+
+void obstacle_detection_zero_memory(obstacle_detection_data* data);
 
 int evaluate_scanner_segment(obstacle_detection_data* data, char *segment);
 void detect_obstacle_segments(obstacle_detection_data* data);

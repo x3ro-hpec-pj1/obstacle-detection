@@ -9,27 +9,13 @@
 
 obstacle_detection_data* obstacle_detection_init_memory() {
     obstacle_detection_data* data = malloc(sizeof(obstacle_detection_data));
-
-    data->timestamp = -1;
-    data->obid = 0;
-    for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
-        data->distances[i] = 0;
-    }
-
-    for(int i = 0; i < MAXIMUM_DETECTABLE_OBJECTS; i++) {
-        data->ransac_results[i].x1 = -1;
-        data->ransac_results[i].y1 = -1;
-        data->ransac_results[i].x2 = -1;
-        data->ransac_results[i].y2 = -1;
-        data->ransac_results[i].x3 = -1;
-        data->ransac_results[i].y3 = -1;
-
-        data->nearest_steps[i] = 0;
-        data->first_steps[i] = 0;
-        data->last_steps[i] = 0;
-    }
-
+    obstacle_detection_zero_memory(data);
     return data;
+}
+
+void obstacle_detection_zero_memory(obstacle_detection_data* data) {
+    memset(data, 0, sizeof(obstacle_detection_data));
+    data->timestamp = -1;
 }
 
 /**

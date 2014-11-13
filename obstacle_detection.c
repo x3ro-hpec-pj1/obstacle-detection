@@ -241,6 +241,8 @@ void do_ransac(obstacle_detection_data* data) {
                data->ransac_results[obid].x3 = lx;
                data->ransac_results[obid].y3 = ly;
             }
+
+            obid++; // continue with next obstacle
         }
     }
 }

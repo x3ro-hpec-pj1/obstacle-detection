@@ -16,20 +16,23 @@ const float THRESHOLD_FACTOR = 0.033f; // 16.5mm divided by 500mm
 const float X_CENTER = 1001.0f;
 const float Y_CENTER = 308.0f;
 
-int nearest_steps[128]; // index = Obstacle-ID, integer-value = Nearest-Step of Obstacle
-int first_steps[128]; // index = Obstacle-ID, integer-value = First-Step of Obstacle
-int last_steps[128]; // index = Obstacle-ID, integer-value = Last-Step of Obstacle
+obstacle_detection_data* obstacle_detection_init_memory() {
+    obstacle_detection_data* data = malloc(sizeof(obstacle_detection_data));
 
-int timestamp = 0; // 24 bit timestamp received from laserscanner
-int distances[DISTANCE_VALUE_COUNT]; // 18 bit decoded distance-values in millimeter for each measurement step
-
-void obstacle_detection_init_memory() {
-    timestamp = -1;
+    data->timestamp = -1;
+    data->obid = 0;
     for(int i = 0; i < DISTANCE_VALUE_COUNT; i++) {
-        distances[i] = 0; // initialize array of distances
+        data->distances[i] = 0;
+    }
+
+    for(int i = 0; i < MAXIMUM_DETECTABLE_OBJECTS; i++) {
+        data->nearest_steps[i] = 0;
+        data->first_steps[i] = 0;
+        data->last_steps[i] = 0;
     }
 
     initializeRPC();
+    return data;
 }
 
 /**
@@ -42,19 +45,17 @@ void obstacle_detection_init_memory() {
  * @param  distances
  * @return The SICP2.0 timestamp of the parsed scanner segment.
  */
-int evaluate_scanner_segment(char *segment) {
-    int timestamp;
-
-    timestamp = segment[0] - 0x30;
-    timestamp <<= 6;
-    timestamp &= 0xFFFFC0; // clear six-most MSB bits according SCIP 2.0
-    timestamp |= segment[1] - 0x30;
-    timestamp <<= 6;
-    timestamp &= 0xFFFFC0;
-    timestamp |= segment[2] - 0x30;
-    timestamp <<= 6;
-    timestamp &= 0xFFFFC0;
-    timestamp |= segment[3] - 0x30;
+int evaluate_scanner_segment(obstacle_detection_data* data, char *segment) {
+    data->timestamp = segment[0] - 0x30;
+    data->timestamp <<= 6;
+    data->timestamp &= 0xFFFFC0; // clear six-most MSB bits according SCIP 2.0
+    data->timestamp |= segment[1] - 0x30;
+    data->timestamp <<= 6;
+    data->timestamp &= 0xFFFFC0;
+    data->timestamp |= segment[2] - 0x30;
+    data->timestamp <<= 6;
+    data->timestamp &= 0xFFFFC0;
+    data->timestamp |= segment[3] - 0x30;
 
     int idx = 0;
     // Start processing data after initial 6 bytes of header, including LF
@@ -70,65 +71,61 @@ int evaluate_scanner_segment(char *segment) {
     // linefeeds. We now decode the extracted distance values.
     // 1536 bytes is the raw data packet size.
     for(idx = 0; idx < 1536; idx += 3) {
-        distances[idx/3] = 0;
-        distances[idx/3] = segment[idx] - 0x30;
-        distances[idx/3] <<= 6;
-        distances[idx/3] &= 0xFFFFC0; // clear six-most MSB bits
-        distances[idx/3] |= segment[idx+1] - 0x30;
-        distances[idx/3] <<= 6;
-        distances[idx/3] &= 0xFFFFC0;
-        distances[idx/3] |= segment[idx+2] - 0x30;
+        data->distances[idx/3] = 0;
+        data->distances[idx/3] = segment[idx] - 0x30;
+        data->distances[idx/3] <<= 6;
+        data->distances[idx/3] &= 0xFFFFC0; // clear six-most MSB bits
+        data->distances[idx/3] |= segment[idx+1] - 0x30;
+        data->distances[idx/3] <<= 6;
+        data->distances[idx/3] &= 0xFFFFC0;
+        data->distances[idx/3] |= segment[idx+2] - 0x30;
     }
 
-     return timestamp;
+     return data->timestamp;
 }
 
 /**
  * Perform obstacle detection on the scanner's distance values.
  * @return Number of obstacles that were detected.
  */
-int detect_obstacle_segments() {
+void detect_obstacle_segments(obstacle_detection_data* data) {
     int i;
 
     // Initialize loop variables
-    int obid = 0;
-    first_steps[0] = 0;
-    nearest_steps[0] = 0;
-    last_steps[0] = 1;
+    data->first_steps[0] = 0;
+    data->nearest_steps[0] = 0;
+    data->last_steps[0] = 1;
 
     // Skip first and last value, otherwise "i-1" would run out of bounds
     for(i = 1; i < (DISTANCE_VALUE_COUNT-1); i++) {
         // According to the laserscanner data-sheet, no accuraccy is guaranteed
         // below 20mm and above 5600mm, so we skip the value.
-        if(distances[i] < 20 || distances[i] > 5600) {
-            distances[i] = INT_MAX;
+        if(data->distances[i] < 20 || data->distances[i] > 5600) {
+            data->distances[i] = INT_MAX;
             continue;
         }
 
         // current step is part of same segment
-        if(abs(distances[i] - distances[i-1]) <= (THRESHOLD_FACTOR * distances[i] + 20)) {
+        if(abs(data->distances[i] - data->distances[i-1]) <= (THRESHOLD_FACTOR * data->distances[i] + 20)) {
             // update nearest-step of this segment
-            if(distances[i] < distances[nearest_steps[obid]]) {
-                nearest_steps[obid] = i;
+            if(data->distances[i] < data->distances[data->nearest_steps[data->obid]]) {
+                data->nearest_steps[data->obid] = i;
             }
-            last_steps[obid] = i; // update last step of segment
+            data->last_steps[data->obid] = i; // update last step of segment
 
 
         // new segment only if at least 4 steps away from previous
-        } else if(i - first_steps[obid] >= 4) {
-            obid++; // use the next obstacle-ID in the next loop
-            first_steps[obid] = i;
-            nearest_steps[obid] = i;
-            last_steps[obid] = i+1;
+        } else if(i - data->first_steps[data->obid] >= 4) {
+            data->obid++; // use the next obstacle-ID in the next loop
+            data->first_steps[data->obid] = i;
+            data->nearest_steps[data->obid] = i;
+            data->last_steps[data->obid] = i+1;
         }
     }
-
-    // Number of obstacles found. +1 since obid counts from 0.
-    return obid + 1;
 }
 
 
-void visualize() {
+void visualize(obstacle_detection_data* data) {
     int obid = 0;
     int i;
 
@@ -140,12 +137,12 @@ void visualize() {
 
     for(i = 0; i < DISTANCE_VALUE_COUNT; i++) {
         g = i * RESOLUTION; // drawing angle
-        l = (float) (distances[i] >> 2); // length of line
+        l = (float) (data->distances[i] >> 2); // length of line
 
         // in case this is a nearest-step of an obstacle
-        if(nearest_steps[obid] == i) {
+        if(data->nearest_steps[obid] == i) {
             // array out-of-bound check
-            if((first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (last_steps[obid] - 1 > 0)) {
+            if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) {
                 //doRANSAC(obid); // calculate and draw triangle-model
             }
 

@@ -14,6 +14,7 @@ pthread_mutex_t mutexUSB; // mutex for USB-access used to receive measurement da
 
 char *startScanMScommand = NULL;
 
+obstacle_detection_data* data;
 
 void init_memory() {
     int status;
@@ -29,7 +30,7 @@ void init_memory() {
         exit(1);
     }
 
-    obstacle_detection_init_memory();
+    data = obstacle_detection_init_memory();
 
     status = pthread_mutex_unlock(&mutexMEM);
     if(status != 0) {
@@ -66,9 +67,9 @@ int main(int argc, const char *argv[]) {
             continue;
         }
 
-        evaluate_scanner_segment(databuffer);
-        detect_obstacle_segments();
-        visualize();
+        evaluate_scanner_segment(data, databuffer);
+        detect_obstacle_segments(data);
+        visualize(data);
 
         segment_count++;
 

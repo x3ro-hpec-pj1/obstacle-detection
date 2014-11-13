@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "scanner_reader.h"
 #include "obstacle_detection.h"
@@ -50,7 +51,7 @@ int main(int argc, const char *argv[]) {
 
     printf("\nInitializing\n");
 
-    FILE *fp = scanner_open(argv[1]);
+    FILE *fp = scanner_open(argv[1], true);
     init_memory();
     obstacle_detection_initialize_visualization();
 

@@ -6,7 +6,7 @@
 #define SCANNER_HEADER_SIZE 20
 #define SCANNER_DATA_SIZE (SCANNER_SEGMENT_SIZE - SCANNER_HEADER_SIZE)
 
-FILE *scanner_open(const char *path);
+FILE *scanner_open(const char *path, bool log_scanner_output);
 void scanner_initialize(FILE *fp);
 int read_scanner_segment(char *target_buffer, FILE *fp);
 

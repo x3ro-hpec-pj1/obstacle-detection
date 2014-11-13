@@ -15,13 +15,17 @@ int scanner_data_offset = 0;
 int scanner_data_length = -1;
 char *scanner_data;
 
+// Counting processed frames for debugging purpose
+int segment_count = 0;
+
 int fd = -1;
 FILE *fp = NULL;
+FILE *log_fp = NULL;
 bool scanner_attached = false;
 
 static bool scanner_initialized = false;
 
-FILE *scanner_open(const char *path) {
+FILE *scanner_open(const char *path, bool log_scanner_output) {
     int status;
     struct stat fd_stat;
 
@@ -52,6 +56,14 @@ FILE *scanner_open(const char *path) {
         printf("Laser scanner does NOT seem to be attached");
     }
     printf(" (S_ISCHR: %d, S_ISREG: %d).\n", S_ISCHR(fd_stat.st_mode), S_ISREG(fd_stat.st_mode));
+
+    if(scanner_attached && log_scanner_output) {
+        log_fp = fopen("scanner.out", "w");
+        if(fp == NULL) {
+            fprintf(stderr, "Could not open file 'scanner.out' for scanner logging. (%s:%d).\n", __FILE__, __LINE__);
+            exit(1);
+        }
+    }
 
     scanner_initialize(fp);
     return fp;
@@ -113,6 +125,12 @@ void scanner_initialize(FILE *fp) {
 
 void scanner_read(void *ptr, size_t bytes, FILE *fp) {
     size_t objects_read = fread(ptr, bytes, 1, fp);
+
+    // Log scanner output to file if requested
+    if(log_fp != NULL) {
+        fwrite(ptr, bytes, 1, log_fp);
+    }
+
     if(objects_read != 1) {
         if(fseek(fp, 0L, SEEK_SET) == 0) {
             return scanner_read(ptr, bytes, fp);
@@ -129,6 +147,8 @@ void scanner_read(void *ptr, size_t bytes, FILE *fp) {
  * @return bytes read
  */
 int read_scanner_segment(char *target_buffer, FILE *fp) {
+    segment_count++;
+
     char header[SCANNER_HEADER_SIZE];
     char data[SCANNER_DATA_SIZE];
 
@@ -141,7 +161,7 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
 
     if(header[0] != 'M' || header[1] != 'D') {
         printf("first two bytes of segment: '%c%c'\n", header[0], header[1]);
-        fprintf(stderr, "Reading scanner segment failed. Unexpected input.\n");
+        fprintf(stderr, "Reading scanner segment %d failed. Unexpected input.\n", segment_count);
         exit(1);
     }
 
@@ -159,7 +179,7 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
 
     // Make sure the header is correct
     if(header[19] != '\n') {
-        fprintf(stderr, "Malformed SCIP2.0 header. Did not have line-feed at offset 20.\n");
+        fprintf(stderr, "Malformed SCIP2.0 header in segment %d. Did not have line-feed at offset 20.\n", segment_count);
         exit(1);
     }
 
@@ -175,7 +195,7 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
     scanner_read(data+1, SCANNER_DATA_SIZE - 1, fp); // -1 since we already read one byte
 
     if(data[SCANNER_DATA_SIZE - 1] != '\n' || data[SCANNER_DATA_SIZE - 2] != '\n') {
-        fprintf(stderr, "Malformed SCIP2.0 data packet. End of data was not found at %d bytes.\n", SCANNER_SEGMENT_SIZE);
+        fprintf(stderr, "Malformed SCIP2.0 data packet (segment %d). End of data was not found at %d bytes.\n", segment_count, SCANNER_SEGMENT_SIZE);
         exit(1);
     }
 

@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <jansson.h>
 #include <math.h>
+#include <limits.h>
 
 #include "rpc.h"
 #include "obstacle_detection.h"
 #include "visualization.h"
 
 // draw laserscanner at this position
-const float X_CENTER = 1001.0f;
-const float Y_CENTER = 308.0f;
 
 void obstacle_detection_initialize_visualization() {
     initializeRPC();
@@ -29,18 +28,21 @@ void visualize(obstacle_detection_data* data) {
     json_t *text_frame = json_array();
 
     unsigned int color_black = get_color(0, 0, 0, 255);
-    unsigned int color_magenta = get_color(255, 0, 255, 255);
+    unsigned int color_red = get_color(255, 0, 0, 255);
+    unsigned int color_grey = get_color(0, 0, 0, 180);
+    unsigned int current_color = color_black;
 
     for(i = 0; i < DISTANCE_VALUE_COUNT; i++) {
         g = i * RESOLUTION; // drawing angle
-        l = (float) (data->distances[i] >> 2); // length of line
+        l = (float) data->distances[i];
+
 
         // in case this is a nearest-step of an obstacle
         if(data->nearest_steps[obid] == i) {
             // array out-of-bound check
 
-            float x = X_CENTER - l * sin(g * M_PI / 180.0);
-            float y = Y_CENTER - l * cos(g * M_PI / 180.0);
+            float x = l * sin(g * M_PI / 180.0);
+            float y = l * cos(g * M_PI / 180.0);
 
             sprintf(text, "ID: %d", obid);
             drawText(text_frame, text, x, y);
@@ -50,16 +52,23 @@ void visualize(obstacle_detection_data* data) {
                 draw_ransac_triangle(data, ransac_frame, obid);
             }
 
+            current_color = color_red;
             obid++; // continue with next obstacle
+        } else {
+            current_color = color_black;
         }
 
-        float x = X_CENTER - l * sin(g * M_PI / 180.0);
-        float y = Y_CENTER - l * cos(g * M_PI / 180.0);
-        drawLine(line_frame, X_CENTER, Y_CENTER, x, y, color_black);
+        if(data->distances[i] == INT_MAX) {
+            current_color = color_grey;
+        }
+
+        float x = l * sin(g * M_PI / 180.0);
+        float y = l * cos(g * M_PI / 180.0);
+        drawLine(line_frame, 0, 0, x, y, current_color);
     }
 
     sprintf(text, "Total objects found: %d", data->obid+1);
-    drawText(text_frame, text, X_CENTER + 100, Y_CENTER + 100);
+    drawText(text_frame, text, 100, 100);
 
     json_array_extend(line_frame, ransac_frame);
     json_array_extend(line_frame, text_frame);
@@ -70,25 +79,26 @@ void visualize(obstacle_detection_data* data) {
 }
 
 void draw_ransac_triangle(obstacle_detection_data* data, json_t *frame, int obid) {
+    unsigned int color_magenta = get_color(255, 0, 255, 255);
     drawLine(frame,
-        X_CENTER - data->ransac_results[obid].x1,
-        X_CENTER - data->ransac_results[obid].y1,
-        X_CENTER - data->ransac_results[obid].x2,
-        X_CENTER - data->ransac_results[obid].y2,
+        data->ransac_results[obid].x1,
+        data->ransac_results[obid].y1,
+        data->ransac_results[obid].x2,
+        data->ransac_results[obid].y2,
         color_magenta);
 
     drawLine(frame,
-        X_CENTER - data->ransac_results[obid].x2,
-        X_CENTER - data->ransac_results[obid].y2,
-        X_CENTER - data->ransac_results[obid].x3,
-        X_CENTER - data->ransac_results[obid].y3,
+        data->ransac_results[obid].x2,
+        data->ransac_results[obid].y2,
+        data->ransac_results[obid].x3,
+        data->ransac_results[obid].y3,
         color_magenta);
 
     drawLine(frame,
-        X_CENTER - data->ransac_results[obid].x3,
-        X_CENTER - data->ransac_results[obid].y3,
-        X_CENTER - data->ransac_results[obid].x1,
-        X_CENTER - data->ransac_results[obid].y1,
+        data->ransac_results[obid].x3,
+        data->ransac_results[obid].y3,
+        data->ransac_results[obid].x1,
+        data->ransac_results[obid].y1,
         color_magenta);
 }
 

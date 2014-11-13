@@ -136,13 +136,13 @@ void do_ransac(obstacle_detection_data* data) {
 
                 // Nearest Segmentpoint
                 ang = data->nearest_steps[obid] * RESOLUTION;
-                len = data->distances[data->nearest_steps[obid]] >> 2;
+                len = data->distances[data->nearest_steps[obid]];
                 nx = (float) (len*sin(ang*M_PI/180));
                 ny = (float) (len*cos(ang*M_PI/180));
 
                 // First Segmentpoint
                 ang = data->first_steps[obid] * RESOLUTION;
-                len = data->distances[data->first_steps[obid]] >> 2;
+                len = data->distances[data->first_steps[obid]];
                 fx = (float) (len*sin(ang*M_PI/180));
                 fy = (float) (len*cos(ang*M_PI/180));
                 tfx = nx - fx;
@@ -150,7 +150,7 @@ void do_ransac(obstacle_detection_data* data) {
 
                 // Last Segmentpoint
                 ang = data->last_steps[obid] * RESOLUTION;
-                len = data->distances[data->last_steps[obid]] >> 2;
+                len = data->distances[data->last_steps[obid]];
                 lx = (float) (len*sin(ang*M_PI/180));
                 ly = (float) (len*cos(ang*M_PI/180));
                 tlx = nx - lx;
@@ -158,7 +158,7 @@ void do_ransac(obstacle_detection_data* data) {
 
                 // Second Segmentpoint
                 ang = (data->first_steps[obid]+1) * RESOLUTION;
-                len = data->distances[ data->first_steps[obid]+1 ] >> 2;
+                len = data->distances[ data->first_steps[obid]+1 ];
                 sx = (float) (len*sin(ang*M_PI/180));
                 sy = (float) (len*cos(ang*M_PI/180));
                 tsx = nx - sx;
@@ -166,7 +166,7 @@ void do_ransac(obstacle_detection_data* data) {
 
                 // Prelast Segmentpoint
                 ang = (data->last_steps[obid]-1) * RESOLUTION;
-                len = data->distances[ data->last_steps[obid]-1 ] >> 2;
+                len = data->distances[ data->last_steps[obid]-1 ];
                 px = (float) (len*sin(ang*M_PI/180));
                 py = (float) (len*cos(ang*M_PI/180));
                 tpx = nx - px;
@@ -175,7 +175,7 @@ void do_ransac(obstacle_detection_data* data) {
                 // Calculate for each first-half segmentpoint the data->distances to FIRST/SECOND front-border
                 for(int current = data->first_steps[obid]+1;current < data->nearest_steps[obid];current++) {
                     ang = current * RESOLUTION;
-                    len = data->distances[current] >> 2;
+                    len = data->distances[current];
                     cx = (float) (len*sin(ang*M_PI/180));
                     cy = (float) (len*cos(ang*M_PI/180));
 
@@ -197,7 +197,7 @@ void do_ransac(obstacle_detection_data* data) {
                 // Calculate for each last-half segmentpoint the data->distances to LAST/PRELAST front-border
                 for(int current = data->nearest_steps[obid]+1;current < data->last_steps[obid];current++) {
                     ang = current * RESOLUTION;
-                    len = data->distances[current] >> 2;
+                    len = data->distances[current];
                     cx = (float) (len*sin(ang*M_PI/180));
                     cy = (float) (len*cos(ang*M_PI/180));
 

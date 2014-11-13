@@ -47,26 +47,7 @@ void visualize(obstacle_detection_data* data) {
 
             // Draw RANSAC triangles
             if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) {
-                drawLine(ransac_frame,
-                    X_CENTER - data->ransac_results[obid].x1,
-                    X_CENTER - data->ransac_results[obid].y1,
-                    X_CENTER - data->ransac_results[obid].x2,
-                    X_CENTER - data->ransac_results[obid].y2,
-                    color_magenta);
-
-                drawLine(ransac_frame,
-                    X_CENTER - data->ransac_results[obid].x2,
-                    X_CENTER - data->ransac_results[obid].y2,
-                    X_CENTER - data->ransac_results[obid].x3,
-                    X_CENTER - data->ransac_results[obid].y3,
-                    color_magenta);
-
-                drawLine(ransac_frame,
-                    X_CENTER - data->ransac_results[obid].x3,
-                    X_CENTER - data->ransac_results[obid].y3,
-                    X_CENTER - data->ransac_results[obid].x1,
-                    X_CENTER - data->ransac_results[obid].y1,
-                    color_magenta);
+                draw_ransac_triangle(data, ransac_frame, obid);
             }
 
             obid++; // continue with next obstacle
@@ -88,6 +69,28 @@ void visualize(obstacle_detection_data* data) {
     json_decref(text_frame);
 }
 
+void draw_ransac_triangle(obstacle_detection_data* data, json_t *frame, int obid) {
+    drawLine(frame,
+        X_CENTER - data->ransac_results[obid].x1,
+        X_CENTER - data->ransac_results[obid].y1,
+        X_CENTER - data->ransac_results[obid].x2,
+        X_CENTER - data->ransac_results[obid].y2,
+        color_magenta);
+
+    drawLine(frame,
+        X_CENTER - data->ransac_results[obid].x2,
+        X_CENTER - data->ransac_results[obid].y2,
+        X_CENTER - data->ransac_results[obid].x3,
+        X_CENTER - data->ransac_results[obid].y3,
+        color_magenta);
+
+    drawLine(frame,
+        X_CENTER - data->ransac_results[obid].x3,
+        X_CENTER - data->ransac_results[obid].y3,
+        X_CENTER - data->ransac_results[obid].x1,
+        X_CENTER - data->ransac_results[obid].y1,
+        color_magenta);
+}
 
 // Pack the given color into an integer. None of the values may be greater than
 // 255. Alpha 255 = fully opaque

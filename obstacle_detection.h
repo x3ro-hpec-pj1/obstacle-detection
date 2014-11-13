@@ -15,6 +15,15 @@
 // threshold to decide new or same segment is dynamically calculated by this factor
 #define THRESHOLD_FACTOR 0.033f // 16.5mm divided by 500mm
 
+typedef struct ransac_triangle {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+    int x3;
+    int y3;
+} ransac_triangle;
+
 /**
  * Struct that encapsulates all data necessary in the obstacle detection process.
  */
@@ -29,6 +38,9 @@ typedef struct obstacle_detection_data {
 
     int obid; // Last object ID detected. After complete obstacle detection, this is the
               // number of detected obstacles counting from zero!
+
+    // Stores the results of the RANSAC model computation per object id
+    ransac_triangle ransac_results[MAXIMUM_DETECTABLE_OBJECTS];
 } obstacle_detection_data;
 
 /**
@@ -39,6 +51,7 @@ obstacle_detection_data* obstacle_detection_init_memory();
 
 int evaluate_scanner_segment(obstacle_detection_data* data, char *segment);
 void detect_obstacle_segments(obstacle_detection_data* data);
+void do_ransac(obstacle_detection_data* data);
 void visualize(obstacle_detection_data* data);
 
 

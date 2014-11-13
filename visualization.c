@@ -24,7 +24,8 @@ void visualize(obstacle_detection_data* data) {
     char text[256];
 
     // Drawing instructions for the current frame are inserted here
-    json_t *frame = json_array();
+    json_t *line_frame = json_array();
+    json_t *text_frame = json_array();
 
     for(i = 0; i < DISTANCE_VALUE_COUNT; i++) {
         g = i * RESOLUTION; // drawing angle
@@ -38,23 +39,23 @@ void visualize(obstacle_detection_data* data) {
             float y = Y_CENTER - l * cos(g * M_PI / 180.0);
 
             sprintf(text, "ID: %d", obid);
-            drawText(frame, text, x, y);
+            drawText(text_frame, text, x, y);
 
             // Draw RANSAC triangles
             if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) {
-                drawLine(frame,
+                drawLine(line_frame,
                     X_CENTER - data->ransac_results[obid].x1,
                     X_CENTER - data->ransac_results[obid].y1,
                     X_CENTER - data->ransac_results[obid].x2,
                     X_CENTER - data->ransac_results[obid].y2);
 
-                drawLine(frame,
+                drawLine(line_frame,
                     X_CENTER - data->ransac_results[obid].x2,
                     X_CENTER - data->ransac_results[obid].y2,
                     X_CENTER - data->ransac_results[obid].x3,
                     X_CENTER - data->ransac_results[obid].y3);
 
-                drawLine(frame,
+                drawLine(line_frame,
                     X_CENTER - data->ransac_results[obid].x3,
                     X_CENTER - data->ransac_results[obid].y3,
                     X_CENTER - data->ransac_results[obid].x1,
@@ -66,12 +67,14 @@ void visualize(obstacle_detection_data* data) {
 
         float x = X_CENTER - l * sin(g * M_PI / 180.0);
         float y = Y_CENTER - l * cos(g * M_PI / 180.0);
-        drawLine(frame, X_CENTER, Y_CENTER, x, y);
+        drawLine(line_frame, X_CENTER, Y_CENTER, x, y);
     }
 
     sprintf(text, "Total objects found: %d", data->obid+1);
-    drawText(frame, text, X_CENTER + 100, Y_CENTER + 100);
+    drawText(text_frame, text, X_CENTER + 100, Y_CENTER + 100);
 
-    sendCommand(frame);
-    json_decref(frame);
+    json_array_extend(line_frame, text_frame);
+    sendCommand(line_frame);
+    json_decref(line_frame);
+    json_decref(text_frame);
 }

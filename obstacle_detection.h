@@ -9,6 +9,10 @@
  */
 #define MAXIMUM_DETECTABLE_OBJECTS 128
 
+
+#define SCANNER_MIN_DISTANCE 20
+#define SCANNER_MAX_DISTANCE 5600
+
 // 360 divided by 1024 degrees
 #define RESOLUTION 0.3515625f
 

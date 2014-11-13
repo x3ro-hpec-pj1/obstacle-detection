@@ -81,10 +81,11 @@ void detect_obstacle_segments(obstacle_detection_data* data) {
 
     // Skip first and last value, otherwise "i-1" would run out of bounds
     for(i = 1; i < (DISTANCE_VALUE_COUNT-1); i++) {
-        // According to the laserscanner data-sheet, no accuraccy is guaranteed
-        // below 20mm and above 5600mm, so we skip the value.
-        if(data->distances[i] < 20 || data->distances[i] > 5600) {
-            data->distances[i] = 0xFFFF;
+
+        // Set all distances values which are outside of the scanner's accuraccy range
+        // to a defined value.
+        if(data->distances[i] < SCANNER_MIN_DISTANCE || data->distances[i] > SCANNER_MAX_DISTANCE) {
+            data->distances[i] = INT_MAX;
             continue;
         }
 

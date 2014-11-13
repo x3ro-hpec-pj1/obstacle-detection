@@ -31,9 +31,6 @@ void visualize(obstacle_detection_data* data) {
         // in case this is a nearest-step of an obstacle
         if(data->nearest_steps[obid] == i) {
             // array out-of-bound check
-            if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) {
-                //doRANSAC(obid); // calculate and draw triangle-model
-            }
 
             float x = X_CENTER - l * sin(g * M_PI / 180.0);
             float y = Y_CENTER - l * cos(g * M_PI / 180.0);
@@ -42,10 +39,28 @@ void visualize(obstacle_detection_data* data) {
             sprintf(text, "ID: %d", obid);
             drawText(frame, text, x, y);
 
-            obid++; // continue with next obstacle
+            // Draw RANSAC triangles
+            if((data->first_steps[obid] + 1 < DISTANCE_VALUE_COUNT) && (data->last_steps[obid] - 1 > 0)) {
+                drawLine(frame,
+                    X_CENTER - data->ransac_results[obid].x1,
+                    X_CENTER - data->ransac_results[obid].y1,
+                    X_CENTER - data->ransac_results[obid].x2,
+                    X_CENTER - data->ransac_results[obid].y2);
 
-        } else { // default distance in black
-            //paint.setColor(android.graphics.Color.BLACK);
+                drawLine(frame,
+                    X_CENTER - data->ransac_results[obid].x2,
+                    X_CENTER - data->ransac_results[obid].y2,
+                    X_CENTER - data->ransac_results[obid].x3,
+                    X_CENTER - data->ransac_results[obid].y3);
+
+                drawLine(frame,
+                    X_CENTER - data->ransac_results[obid].x3,
+                    X_CENTER - data->ransac_results[obid].y3,
+                    X_CENTER - data->ransac_results[obid].x1,
+                    X_CENTER - data->ransac_results[obid].y1);
+            }
+
+            obid++; // continue with next obstacle
         }
 
         float x = X_CENTER - l * sin(g * M_PI / 180.0);

@@ -12,6 +12,8 @@
 // 360 divided by 1024 degrees
 #define RESOLUTION 0.3515625f
 
+// threshold to decide new or same segment is dynamically calculated by this factor
+#define THRESHOLD_FACTOR 0.033f // 16.5mm divided by 500mm
 
 /**
  * Struct that encapsulates all data necessary in the obstacle detection process.

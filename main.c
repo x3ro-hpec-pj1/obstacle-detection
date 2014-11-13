@@ -6,6 +6,7 @@
 
 #include "scanner_reader.h"
 #include "obstacle_detection.h"
+#include "visualization.h"
 
 pthread_t workerThread1; // pointers to control the used worker-thread object
 pthread_t workerThread2;
@@ -51,6 +52,7 @@ int main(int argc, const char *argv[]) {
 
     FILE *fp = scanner_open(argv[1]);
     init_memory();
+    obstacle_detection_initialize_visualization();
 
     char databuffer[SCANNER_SEGMENT_SIZE];
     int bytes_read;

@@ -9,7 +9,8 @@
  */
 #define MAXIMUM_DETECTABLE_OBJECTS 128
 
-
+// According to the laserscanner data-sheet, no accuraccy is guaranteed
+// below 20mm and above 5600mm, so we skip the value.
 #define SCANNER_MIN_DISTANCE 20
 #define SCANNER_MAX_DISTANCE 5600
 

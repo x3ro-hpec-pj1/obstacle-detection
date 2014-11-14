@@ -117,6 +117,7 @@ void scanner_initialize(FILE *fp) {
     // clustercount=1, skipinterval=0 --> 640-128 = 512 steps
     printf("Initializing laser scanner: ");
 
+    // TODO: Allow setting the initialization angle
     cmd = "MD0128064001000\n";
     write(fd, cmd, 16);
 

@@ -149,10 +149,23 @@ void scanner_read(void *ptr, size_t bytes, FILE *fp) {
  */
 int read_scanner_segment(char *target_buffer, FILE *fp) {
     segment_count++;
+    read_scanner_header(fp);
 
+
+    char begin_of_data[1];
+    scanner_read(begin_of_data, 1, fp);
+
+    // Early end of packet, which did not contain any data.
+    if(begin_of_data[0] == '\n') {
+        return SCANNER_HEADER_SIZE + 1; // +1 since we read the additional LF
+    }
+
+
+    return read_scanner_body(target_buffer, fp, begin_of_data[0]);
+}
+
+void read_scanner_header(FILE *fp) {
     char header[SCANNER_HEADER_SIZE];
-    char data[SCANNER_DATA_SIZE];
-
     scanner_read(header, SCANNER_HEADER_SIZE, fp);
 
     // seek next frame
@@ -183,16 +196,12 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
         fprintf(stderr, "Malformed SCIP2.0 header in segment %d. Did not have line-feed at offset 20.\n", segment_count);
         exit(1);
     }
+}
 
-    char begin_of_data[1];
-    scanner_read(begin_of_data, 1, fp);
+int read_scanner_body(char *target_buffer, FILE *fp, char begin_of_data) {
+    char data[SCANNER_DATA_SIZE];
 
-    // Early end of packet, which did not contain any data.
-    if(begin_of_data[0] == '\n') {
-        return SCANNER_HEADER_SIZE + 1; // +1 since we read the additional LF
-    }
-
-    data[0] = begin_of_data[0];
+    data[0] = begin_of_data;
     scanner_read(data+1, SCANNER_DATA_SIZE - 1, fp); // -1 since we already read one byte
 
     if(data[SCANNER_DATA_SIZE - 1] != '\n' || data[SCANNER_DATA_SIZE - 2] != '\n') {
@@ -204,3 +213,7 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
 
     return SCANNER_SEGMENT_SIZE;
 }
+
+
+
+

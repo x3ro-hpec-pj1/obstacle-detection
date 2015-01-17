@@ -1,0 +1,16 @@
+BOARD_IP=192.168.1.2
+TARGET_DIR=/home/root/
+CC=arm-linux-gnueabihf-gcc-4.9
+NM=arm-linux-gnueabihf-gcc-nm-4.9
+CXX=arm-linux-gnueabihf-g++-4.9
+CFLAGS_ADD=-mcpu=cortex-a9 -mfloat-abi=hard
+
+include Makefile.shared
+
+jansson_configure:
+	cd $(JANSSON_DIR); [ ! -e "configure" ] && autoreconf -fi; \
+		export CC="$(CC)"; \
+		export NM="$(NM)"; \
+		export CXX="$(CXX)"; \
+		[ ! -e "Makefile" ] && ./configure --host=arm-linux-gnueabihf --target=arm-linux-gnueabihf; \
+		[ -e "Makefile" ]

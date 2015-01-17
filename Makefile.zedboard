@@ -11,6 +11,12 @@ run: $(NAME)
 		sshpass -p root scp $(NAME) root@$(BOARD_IP):$(TARGET_DIR) && \
 		sshpass -p root ssh root@$(BOARD_IP) "cd $(TARGET_DIR) && ./$(NAME) $(RUN_PARAMS); echo 'Return code: ' $$?"
 
+debug: $(NAME)
+		sshpass -p root scp $(NAME) root@$(BOARD_IP):$(TARGET_DIR) && \
+		sshpass -p root ssh root@$(BOARD_IP) "cd $(TARGET_DIR) && gdbserver host:3333 ./$(NAME) $(RUN_PARAMS); echo 'Return code: ' $$?"
+
+
+
 jansson_configure:
 	cd $(JANSSON_DIR); [ ! -e "configure" ] && autoreconf -fi; \
 		export CC="$(CC)"; \

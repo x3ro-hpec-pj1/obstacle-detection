@@ -142,7 +142,11 @@ void scanner_read(void *ptr, size_t bytes, FILE *fp) {
         if(fseek(fp, 0L, SEEK_SET) == 0) {
             return scanner_read(ptr, bytes, fp);
         } else {
+#ifdef ZYNQ
+            fprintf(stderr, "'Couldn't read %d bytes from file' near line %d.\n", bytes, __LINE__);
+#else
             fprintf(stderr, "'Couldn't read %ld bytes from file' near line %d.\n", bytes, __LINE__);
+#endif
             exit(1);
         }
     }

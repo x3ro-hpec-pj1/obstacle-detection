@@ -3,7 +3,7 @@ TARGET_DIR=/home/root/
 CC=arm-linux-gnueabihf-gcc-4.9
 NM=arm-linux-gnueabihf-gcc-nm-4.9
 CXX=arm-linux-gnueabihf-g++-4.9
-CFLAGS_ADD=-mcpu=cortex-a9 -mfloat-abi=hard
+CFLAGS_ADD=-DZYNQ -mcpu=cortex-a9 -mfloat-abi=hard
 
 include Makefile.shared
 

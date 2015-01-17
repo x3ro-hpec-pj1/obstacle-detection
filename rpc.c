@@ -4,71 +4,64 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <jansson.h>
+#include <arpa/inet.h>
 
 #include "rpc.h"
+
+#define SERVER "192.168.1.1"
+#define PORT 6871   //The port on which to send data
 
 
 int sendCount = 0;
 int sckt;
+struct sockaddr_in si_remote;
+int slen=sizeof(si_remote);
+
 
 void initializeRPC() {
-    int s;
-    struct sockaddr_un local, remote;
-    unsigned int len;
-    int status;
-
-    s = socket(AF_UNIX, SOCK_STREAM, 0);
-    if(s == -1) {
+    sckt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if(sckt == -1) {
         fprintf(stderr, "'Could not create socket' near line %d.\n", __LINE__);
         exit(1);
     }
 
-    local.sun_family = AF_UNIX;
-    strcpy(local.sun_path, "/Users/lucas/testsckt");
-    unlink(local.sun_path);
-    len = strlen(local.sun_path) + sizeof(local.sun_family) + 1;
-    status = bind(s, (struct sockaddr *) &local, len);
-    if(status == -1) {
-        fprintf(stderr, "'Could not bind to socket' near line %d.\n", __LINE__);
-        exit(1);
-    }
+    memset((char *) &si_remote, 0, sizeof(si_remote));
+    si_remote.sin_family = AF_INET;
+    si_remote.sin_port = htons(PORT);
 
-    listen(s, 1);
-    if(status == -1) {
-        fprintf(stderr, "'Could not listen to socket' near line %d.\n", __LINE__);
-        exit(1);
-    }
-
-    len = sizeof(struct sockaddr_un);
-    sckt = accept(s, (struct sockaddr *) &remote, &len);
-    if(sckt == -1) {
-        fprintf(stderr, "'Failed accepting socket connection' near line %d.\n", __LINE__);
+    if (inet_aton(SERVER , &si_remote.sin_addr) == 0) {
+        fprintf(stderr, "inet_aton() failed\n");
         exit(1);
     }
 }
 
 void sendCommand(json_t *cmd) {
+    cmd = cmd;
     char *cmd_str = json_dumps(cmd, JSON_COMPACT|JSON_PRESERVE_ORDER);
     int cmd_length = strlen(cmd_str);
 
-    char *buffer = malloc(cmd_length + 6); // 6 =  5 bytes length indicator + 1 newline
+    char *buffer = malloc(cmd_length + 7); // 7 =  5 bytes length indicator + 1 newline +
+                                           // 1 byte "don't want to debug why I need this byte" padding
 
-    // I'm aware that passing the length in ASCII is horribly inefficient, thank
-    // you. But it makes it easy to debug because I can just `cat` the socket,
-    // so I don't care. Feel free to optimize :)
+    // // I'm aware that passing the length in ASCII is horribly inefficient, thank
+    // // you. But it makes it easy to debug because I can just `cat` the socket,
+    // // so I don't care. Feel free to optimize :)
+    buffer = buffer;
     sprintf(buffer, "%05d%s\n", cmd_length+1, cmd_str);
 
     int status;
     sendCount++;
-    status = send(sckt, buffer, strlen(buffer), 0);
-    free(cmd_str);
-    free(buffer);
+    status = 1;
+    status = sendto(sckt, buffer, strlen(buffer) , 0 , (struct sockaddr *) &si_remote, slen);
 
     if(status == -1) {
         fprintf(stderr, "'Failed to send message to socket' near line %d.\n", __LINE__);
         perror("send()");
         exit(1);
     }
+
+    free(cmd_str);
+    free(buffer);
 }
 
 void drawText(json_t *frame, char* text, float x, float y) {

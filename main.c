@@ -102,7 +102,7 @@ void *thread_loop(void *ptr) {
         evaluate_scanner_segment(data, databuffer);
         detect_obstacle_segments(data);
         do_ransac(data);
-        //visualize(data);
+        visualize(data);
         obstacle_detection_zero_memory(data);
 
         (*config->framesProcessed)++;
@@ -122,7 +122,7 @@ int main(int argc, const char *argv[]) {
     printf("\n");
 
     FILE *fp = scanner_open(argv[1], true);
-    //obstacle_detection_initialize_visualization();
+    obstacle_detection_initialize_visualization();
     init_memory();
     init_threads(fp);
 

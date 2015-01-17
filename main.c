@@ -1,3 +1,5 @@
+#define _BSD_SOURCE 1
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "scanner_reader.h"
 
@@ -86,7 +87,9 @@ int fd_flush(int fd, struct timeval *timeout) {
         if(s != 1) {
             break;
         }
-        read(fd, buffer, 1);
+        int ret = read(fd, buffer, 1);
+        assert(ret != -1);
+
         bytes_read++;
     }
 
@@ -105,7 +108,9 @@ void scanner_initialize(FILE *fp) {
     printf("Resetting laser scanner: ");
 
     char *cmd = "RS\n";
-    write(fd, cmd, 3);
+    int ret = write(fd, cmd, 3);
+    assert(ret != -1);
+
     struct timeval timeout;
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
@@ -119,7 +124,8 @@ void scanner_initialize(FILE *fp) {
 
     // TODO: Allow setting the initialization angle
     cmd = "MD0128064001000\n";
-    write(fd, cmd, 16);
+    ret = write(fd, cmd, 16);
+    assert(ret != -1);
 
     printf("done\n");
 }
@@ -136,7 +142,11 @@ void scanner_read(void *ptr, size_t bytes, FILE *fp) {
         if(fseek(fp, 0L, SEEK_SET) == 0) {
             return scanner_read(ptr, bytes, fp);
         } else {
+#ifdef ZYNQ
+            fprintf(stderr, "'Couldn't read %d bytes from file' near line %d.\n", bytes, __LINE__);
+#else
             fprintf(stderr, "'Couldn't read %ld bytes from file' near line %d.\n", bytes, __LINE__);
+#endif
             exit(1);
         }
     }

@@ -1,0 +1,30 @@
+JANSSON_DIR=./lib/jansson
+JANSSON_LIB=$(JANSSON_DIR)/src/.libs
+
+LDFLAGS=-static -L$(JANSSON_LIB) -ljansson -lm -lpthread
+CFLAGS=-Werror -Wall -Wextra -I$(JANSSON_DIR)/src -O2 -g -std=gnu99 $(CFLAGS_ADD)
+DEPS = rpc.h scanner_reader.h obstacle_detection.h visualization.h
+OBJ = rpc.o scanner_reader.o obstacle_detection.o visualization.o main.o
+NAME=cimpl
+
+all: $(NAME)
+
+%.o: %.c $(DEPS)
+	$(CC)  $(CFLAGS) -c -o $@ $<
+
+$(NAME): jansson $(OBJ)
+	$(CC) -o $@ $(CFLAGS) $(OBJ) $(LDFLAGS)
+
+clean:
+	rm -f $(NAME) $(OBJ)
+
+
+# ======================
+# Jansson (JSON library)
+# ======================
+
+jansson: jansson_configure
+	cd $(JANSSON_DIR) && make
+
+jansson_clean:
+	cd $(JANSSON_DIR) && git clean -fdx

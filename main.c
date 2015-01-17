@@ -95,6 +95,7 @@ void *thread_loop(void *ptr) {
         bytes_read = read_scanner_segment(databuffer, config->fp);
         if(bytes_read != 1616) {
             fprintf(stderr, "Read non-data scanner segment. Skipping\n");
+            pthread_mutex_unlock(config->mutexUSB);
             continue;
         }
         // printf("exit\n");

@@ -1,16 +1,12 @@
 include Makefile.shared
 
 run: $(NAME)
-	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ ../res/scanner2.out
-
-run_local: $(NAME)
-	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ ./scanner.out
+	export DYLD_LIBRARY_PATH="$(JANSSON_LIB)"; \
+	 ./$^ $(RUN_PARAMS)
 
 debug: $(NAME)
-	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; lldb ./$^ ../res/scanner.out
-
-run_scanner: $(NAME)
-	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ /dev/cu.usbmodemfa131
+	export DYLD_LIBRARY_PATH="$(JANSSON_LIB)"; \
+	gdb ./$^ $(RUN_PARAMS)
 
 jansson_configure:
 	cd $(JANSSON_DIR); [ ! -e "configure" ] && autoreconf -fi; \

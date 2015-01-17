@@ -1,11 +1,9 @@
-SHELL=csh
-
 JANSSON_DIR=./lib/jansson
 JANSSON_LIB=$(JANSSON_DIR)/src/.libs
 
-CC=clang
-CFLAGS=-Werror -Wall -Wextra -I$(JANSSON_DIR)/src -O2 -g
-LDFLAGS=-L$(JANSSON_LIB) -ljansson
+#CC=
+LDFLAGS=-static -L$(JANSSON_LIB) -ljansson -lm -lpthread
+CFLAGS=-Werror -Wall -Wextra -I$(JANSSON_DIR)/src -O2 -g -std=gnu99
 DEPS = rpc.h scanner_reader.h obstacle_detection.h visualization.h
 OBJ = rpc.o scanner_reader.o obstacle_detection.o visualization.o main.o
 NAME=cimpl
@@ -28,7 +26,7 @@ run_scanner: $(NAME)
 	setenv DYLD_LIBRARY_PATH $(JANSSON_LIB) ; ./$^ /dev/cu.usbmodemfa131
 
 $(NAME): jansson $(OBJ)
-	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(OBJ)
+	$(CC) -o $@ $(CFLAGS) $(OBJ) $(LDFLAGS)
 
 clean:
 	rm -f $(NAME) $(OBJ)

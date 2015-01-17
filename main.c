@@ -91,14 +91,12 @@ void *thread_loop(void *ptr) {
 
     while(1) {
         pthread_mutex_lock(config->mutexUSB);
-        //printf("enter\n");
         bytes_read = read_scanner_segment(databuffer, config->fp);
         if(bytes_read != 1616) {
             fprintf(stderr, "Read non-data scanner segment. Skipping\n");
             pthread_mutex_unlock(config->mutexUSB);
             continue;
         }
-        // printf("exit\n");
         pthread_mutex_unlock(config->mutexUSB);
 
         evaluate_scanner_segment(data, databuffer);
@@ -130,22 +128,15 @@ int main(int argc, const char *argv[]) {
 
     printf("Initialization complete\n");
 
-    // pthread_join( workerThread1, NULL);
-    // pthread_join( workerThread2, NULL);
-    //
-    clock_t start = clock(), diff, now;
+    // Measuring throughput happens here
     long frame_count = 0;
     long last_framecount = 0;
     while(1) {
         usleep(1000000);
         frame_count = framesProcessed1 + framesProcessed2;
-        now = clock();
-        diff = now - start;
-        double elapsed = diff*1.0 / CLOCKS_PER_SEC;
-        printf("Throughput: %f MB/s\n", ((frame_count - last_framecount) * 1616.0)/(elapsed)/1024/1024);
-        start = now;
+        double elapsed = 1.0; // usleep sleeps for 1 second.
+        printf("%f\n", ((frame_count - last_framecount) * 1616.0)/(elapsed)/1024/1024);
         last_framecount = frame_count;
-
     }
 
     return 0;

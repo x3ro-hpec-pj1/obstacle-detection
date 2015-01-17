@@ -7,6 +7,10 @@ CFLAGS_ADD=-DZYNQ -mcpu=cortex-a9 -mfloat-abi=hard
 
 include Makefile.shared
 
+run: $(NAME)
+		sshpass -p root scp $(NAME) root@$(BOARD_IP):$(TARGET_DIR) && \
+		sshpass -p root ssh root@$(BOARD_IP) "cd $(TARGET_DIR) && ./$(NAME); echo 'Return code: ' $$?"
+
 jansson_configure:
 	cd $(JANSSON_DIR); [ ! -e "configure" ] && autoreconf -fi; \
 		export CC="$(CC)"; \

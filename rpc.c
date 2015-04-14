@@ -18,19 +18,44 @@ struct sockaddr_in si_remote;
 int slen=sizeof(si_remote);
 
 
+int sckt, n;
+struct sockaddr_in servaddr,cliaddr;
+
+
 void initializeRPC() {
-    sckt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    // sckt = socket(AF_INET, SOCK_STREAM, 0);
+    // if(sckt == -1) {
+    //     fprintf(stderr, "'Could not create socket' near line %d.\n", __LINE__);
+    //     exit(1);
+    // }
+
+    // memset((char *) &si_remote, 0, sizeof(si_remote));
+    // si_remote.sin_family = AF_INET;
+    // si_remote.sin_port = htons(PORT);
+
+    // if (inet_aton(SERVER , &si_remote.sin_addr) == 0) {
+    //     fprintf(stderr, "inet_aton() failed\n");
+    //     exit(1);
+    // }
+
+    // if(connect(sckt, (struct sockaddr *)&si_remote, sizeof(si_remote) != 0)) {
+    //     fprintf(stderr, "Could not connect to server\n");
+    //     exit(1);
+    // }
+
+    sckt=socket(AF_INET,SOCK_STREAM,0);
     if(sckt == -1) {
         fprintf(stderr, "'Could not create socket' near line %d.\n", __LINE__);
         exit(1);
     }
 
-    memset((char *) &si_remote, 0, sizeof(si_remote));
-    si_remote.sin_family = AF_INET;
-    si_remote.sin_port = htons(PORT);
-
-    if (inet_aton(SERVER , &si_remote.sin_addr) == 0) {
-        fprintf(stderr, "inet_aton() failed\n");
+    bzero(&servaddr,sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr=inet_addr(SERVER);
+    servaddr.sin_port=htons(PORT);
+    n = connect(sckt, (struct sockaddr *)&servaddr, sizeof(servaddr));
+    if(n != 0) {
+        fprintf(stderr, "Could not connect to server\n");
         exit(1);
     }
 }

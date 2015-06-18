@@ -8,6 +8,8 @@
 
 #include "rpc.h"
 
+//#define SERVER "172.16.56.1"
+//#define SERVER "127.0.0.1"
 #define SERVER "192.168.1.1"
 #define PORT 6871   //The port on which to send data
 

@@ -26,7 +26,9 @@ Running the project on the board:
 
     RUN_PARAMS=path-to-scannerdevice-or-scannerfile make -f Makefile.zedboard run
 
-Note that to run remotely, the file/device that RUN_PARAMS points to must be manually transferred to the boards `TARGET_DIR` as configured in `Makefile.zedboard`.
+Note that to run remotely, the file/device that RUN_PARAMS points to must be transferred to the boards `TARGET_DIR` as configured in `Makefile.zedboard`. This is achieved by running:
+
+	make -f Makefile.zedboard scannerdata
 
 
 # Laserscanner on the Zedboard

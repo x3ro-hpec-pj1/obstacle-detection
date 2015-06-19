@@ -2,7 +2,7 @@
 
 If you're on a recent Ubuntu (e.g. 14.10), installing the dependencies can be done by running:
 
-    sudo apt-get install gcc-4.9-arm-linux-gnueabihf minicom sshpass
+    sudo apt-get install gcc-4.9-arm-linux-gnueabihf minicom sshpass autoconf build-essential automake libtool
 
 # Building
 

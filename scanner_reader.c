@@ -175,7 +175,7 @@ int read_scanner_segment(char *target_buffer, FILE *fp) {
 }
 
 void read_scanner_header(FILE *fp) {
-    //usleep(100000);
+    usleep(100000);
     char header[SCANNER_HEADER_SIZE];
     scanner_read(header, SCANNER_HEADER_SIZE, fp);
 
